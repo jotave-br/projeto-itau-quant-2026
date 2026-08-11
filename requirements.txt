@@ -1,0 +1,38 @@
+# Dependencias do projeto V1 (rede lead-lag na B3)
+#
+# Alvo: Python 3.12 dentro de .venv. NAO usar o Python global.
+#
+# Politica de versoes: estabilidade acima de novidade. As versoes abaixo estao
+# deliberadamente uma ou duas minor atras da ultima, e pandas fica na linha 2.x
+# porque a 3.0 traz mudancas de API (copy-on-write obrigatorio, dtype de string
+# por padrao) que o statsmodels ainda nao exercitou a fundo. Para este projeto,
+# reprodutibilidade vale mais do que acompanhar a versao mais recente.
+
+# --- Nucleo de dados ---
+numpy==2.4.3
+pandas==2.3.3
+
+# --- Estatistica ---
+scipy==1.16.3
+statsmodels==0.14.6
+
+# --- Dados de mercado ---
+# yfinance quebra com frequencia entre versoes; o pin aqui e especialmente
+# importante. Fonte apenas dos precos ajustados (retornos).
+yfinance==1.4.1
+
+# --- Graficos ---
+matplotlib==3.10.9
+
+# --- Formato de cache em disco ---
+# Backend de leitura/escrita parquet usado pelo pandas. Nao e biblioteca de
+# analise: nenhuma decisao metodologica passa por ela. Entra porque os arquivos
+# COTAHIST anuais tem centenas de MB em texto de largura fixa, e reprocessa-los
+# a cada execucao inviabilizaria o ciclo de trabalho. Alternativa descartada:
+# cache em CSV (lento e grande) ou pickle (fragil entre versoes).
+pyarrow==23.0.1
+
+# --- Testes ---
+# Dependencia de desenvolvimento, nao de analise. Os testes anti-lookahead
+# verificam as fronteiras temporais do backtest.
+pytest==9.0.3

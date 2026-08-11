@@ -1,0 +1,29 @@
+campo,valor,decisao,categoria,descricao,justificativa,primeiro_ano,ultimo_ano,exemplos
+ESPECI,ON,aceito,acao,Acao ordinaria,Acao brasileira com direito a voto. Nucleo do universo.,2015,2026,PETR3 VALE3 ABEV3
+ESPECI,PN,aceito,acao,Acao preferencial,Acao brasileira sem voto e com preferencia em dividendos.,2015,2026,PETR4 ITUB4 BBDC4
+ESPECI,PNA,aceito,acao,Preferencial classe A,Classe de preferencial. Legitima. VALE5 era a 3a mais liquida de 2015.,2015,2026,VALE5 BRKM5 CPLE5
+ESPECI,PNB,aceito,acao,Preferencial classe B,Classe de preferencial legitima.,2015,2026,CPLE6 BRSR6 CESP6
+ESPECI,PNC,aceito,acao,Preferencial classe C,Classe de preferencial legitima. Poucos emissores.,2015,2026,BRGE7 CELP7 TENE7
+ESPECI,PND,aceito,acao,Preferencial classe D,Classe de preferencial legitima. Apenas Consorcio Alfa.,2015,2024,BRGE8
+ESPECI,PNE,aceito,acao,Preferencial classe E,Classe de preferencial legitima. TERMINA EM 11 sem ser unit nem ETF.,2015,2024,BRGE11
+ESPECI,PNF,aceito,acao,Preferencial classe F,Classe de preferencial legitima. TERMINA EM 12 sem ser unit nem ETF.,2015,2024,BRGE12
+ESPECI,UNT,aceito,acao,Unit,Pacote de acoes do mesmo emissor negociado como um so papel. TERMINA EM 11 sem ser ETF.,2015,2026,SANB11 TAEE11 ALUP11 KLBN11
+ESPECI,DRN,bloqueado,bdr,BDR nao patrocinado,Recibo de acao estrangeira. Acompanha mecanicamente o fechamento da bolsa de origem e quase nao negocia aqui (mediana de 1 negocio por dia). Como seguidora produziria lead-lag falso e ainda contrabandearia a comparacao Brasil-EUA que o escopo exclui. Negociado em LOTE PADRAO ate 2022 portanto NAO e barrado pelo filtro de CODBDI.,2015,2022,CHVX34 ORCL34 AAPL34
+ESPECI,DR1,bloqueado,bdr,BDR patrocinado nivel 1,Mesma justificativa de DRN.,2021,2022,
+ESPECI,DR2,bloqueado,bdr,BDR patrocinado nivel 2,Mesma justificativa de DRN.,2015,2022,TGLT32
+ESPECI,DR3,bloqueado,bdr,BDR patrocinado nivel 3,Mesma justificativa de DRN.,2015,2022,BSAN33 CZLT33 DAGB33
+ESPECI,DRE,bloqueado,bdr,BDR de ETF estrangeiro,Recibo de ETF estrangeiro. Categoria criada pela B3 em 2022. 155 tickers com mediana de 2 negocios por dia e 58 deles com 1 ou menos. Descoberto porque o pipeline PAROU ao encontrar tipo nao classificado.,2022,2022,BIAU39 BEWZ39 GDXB39
+ESPECI,CI,bloqueado,fundo,Cota de fundo de investimento,ETF e fundo imobiliario. Nao e acao de empresa. Em geral ja barrado pelo CODBDI (12 e 14) mas aparece em lote padrao em 2019.,2015,2026,BOVA11 KNRI11
+ESPECI,IBO,bloqueado,indice,Instrumento de indice Ibovespa,Nao e acao. Aparecia no topo do ranking de liquidez com R$ 2.4 bilhoes por dia em 2015. No arquivo consta como IBO ate 2024 e IBO/ a partir de 2025 - a pontuacao e removida pela normalizacao.,2015,2026,IBOV11
+ESPECI,SML,bloqueado,indice,Instrumento de indice Small Cap,Nao e acao. No arquivo consta como SML) com parentese solto escrito pela propria B3. Confirmado no registro cru: NOMRES SMALL CAP e ISIN BRSMLLINDM18 tipo IND.,2024,2026,SMLL11
+ISIN,ACN,aceito,acao,Acao,Codigo de tipo nas posicoes 7 a 9 do ISIN brasileiro. Confirma que o instrumento e acao.,2015,2026,BRPETRACNPR6
+ISIN,CDA,aceito,acao,Certificado de deposito de acoes,Forma como a maioria das units aparece no ISIN.,2015,2026,BRSANBCDAM13
+ISIN,UNT,aceito,acao,Unit,Forma alternativa de unit no ISIN. Descoberta pela checagem redundante que acusou 246 divergencias contra o ESPECI todas de BBTG11.,2015,2026,BRBBTGUNT007
+ISIN,BDR,bloqueado,bdr,BDR,Classificador de primeira linha para BDR. Estavel em todos os anos ao contrario do rotulo do ESPECI.,2015,2026,BRCHVXBDR008
+ISIN,CTF,bloqueado,fundo,Cota de fundo,Classificador de primeira linha para ETF e FII.,2015,2026,BRBOVACTF003
+ISIN,IND,bloqueado,indice,Indice,Classificador de primeira linha para instrumento de indice. Resolve sozinho as variantes de rotulo IBO IBO/ e SML) porque nao muda entre anos.,2015,2026,BRSMLLINDM18
+ISIN,A01,bloqueado,subscricao,Recibo de subscricao,Instrumento temporario de aumento de capital. O ESPECI diz ON ou PN mas o ISIN revela que nao e acao ordinaria. Excluido automaticamente pela exigencia de que ESPECI e ISIN concordem.,2025,2026,GOLL54 AZUL53
+ISIN,A02,bloqueado,subscricao,Recibo de subscricao,Mesma justificativa de A01.,2020,2020,JSLG11
+ISIN,A03,bloqueado,subscricao,Recibo de subscricao,Mesma justificativa de A01.,2019,2019,JBDU11 JBDU12
+TPMERC,010,aceito,mercado,Mercado a vista,Unico segmento do estudo. Exclui termo opcoes e futuro.,2015,2026,
+CODBDI,02,aceito,mercado,Lote padrao,Exclui fracionario leilao ETF e fundo imobiliario. NAO exclui BDR ate 2022.,2015,2026,

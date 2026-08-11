@@ -1,0 +1,15 @@
+# Normaliza quebra de linha: LF no repositorio, nativo no working tree.
+# Sem isso, um colaborador em Linux e outro em Windows geram diffs falsos em
+# arquivos inteiros, o que polui o historico de um repositorio publico.
+* text=auto eol=lf
+
+# Notebooks: diff textual e ilegivel, mas manter como texto permite ao menos
+# inspecionar o JSON quando necessario.
+*.ipynb text eol=lf
+
+# Binarios e dados
+*.png binary
+*.jpg binary
+*.parquet binary
+*.zip binary
+*.pdf binary
