@@ -121,6 +121,39 @@ como prova de uma decisão que poderia ter sido executada em tempo real. Uma
 validação genuinamente prospectiva exige eventos posteriores ao corte de
 conhecimento documentado do modelo.
 
+## Efeito fundamental não é retorno anormal
+
+Registrado em 12/08/2026, antes de qualquer backtest da V2 ter sido executado.
+
+O rótulo pede o efeito fundamental esperado da informação sobre o valor das
+ações. A estratégia precisa de retorno anormal. As duas coisas só coincidem
+quando a informação ainda não está no preço, e nada no desenho garante isso.
+
+O caso clássico é o resultado que vem forte e derruba a ação porque o mercado
+esperava mais: o efeito fundamental é positivo e o retorno é negativo. Um
+rotulador que leia só o documento não tem como saber a expectativa — a regra 1
+do protocolo proíbe consultá-la —, então ele acerta o rótulo e erra o sinal do
+trade. É por isso que as regras 4 e 5 empurram para neutro em vez de deixar a
+leitura de manchete decidir.
+
+O corpus reduz parte dessa exposição. São 882 Fatos Relevantes e nenhum
+demonstrativo de resultado: earnings entram na CVM por outra categoria e ficaram
+fora. Mas o mecanismo continua ativo em `Guidance` e `Projeções`, que são
+revisão de expectativa por definição, e no tamanho de dividendo ou JCP frente ao
+que o mercado projetava.
+
+Isso também explica a neutralidade dominante sem precisar culpar o protocolo:
+os assuntos mais frequentes do corpus são remuneração ao acionista, JCP,
+recompra e reorganização societária — exatamente as operações que a regra 5
+trata como neutras porque realocam valor em vez de criar. A escassez de eventos
+direcionais é uma propriedade do que é um Fato Relevante, não um artefato da
+régua.
+
+Consequência para a leitura do resultado: um backtest nulo na V2 admite ao menos
+três explicações que este desenho não separa — rotulagem ruim, rotulagem boa
+medindo a grandeza errada, ou ausência de efeito lead-lag condicionado. O
+relatório precisa declarar as três em vez de atribuir o nulo à primeira.
+
 ## Fora do escopo
 
 Não serão adicionados notícias gerais, RAG, embeddings, fine-tuning, classificação
