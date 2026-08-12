@@ -38,6 +38,10 @@ data/processed/*
 outputs/runs/*
 !outputs/runs/.gitkeep
 
+# Fichas locais da validação humana da V2
+outputs/validacao_humana/*
+!outputs/validacao_humana/.gitkeep
+
 # --- Segredos (nao deveria existir nenhum neste projeto, mas por garantia) ---
 .env
 *.key
