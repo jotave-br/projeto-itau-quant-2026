@@ -411,3 +411,97 @@ def test_avaliacao_recusa_ids_e_invariantes_de_abstencao_invalidos():
     outro_id = _predicoes([("d2", True, "positiva", False)])
     with pytest.raises(ValueError, match="mesmos IDs"):
         validacao_ia.avaliar_ia_contra_gold(outro_id, gold, 0.8)
+
+
+def _votos(linhas: list[list[str]], avaliadores: list[str]) -> pd.DataFrame:
+    return pd.DataFrame(linhas, columns=avaliadores)
+
+
+PAINEL = ["gemini", "opus", "qwen_max", "humano"]
+
+
+def test_fleiss_kappa_extremos_e_valor_conhecido():
+    concordancia_total = _votos(
+        [["especifico_positiva"] * 4, ["especifico_neutra"] * 4], PAINEL
+    )
+    assert validacao_ia.calcular_fleiss_kappa(concordancia_total) == pytest.approx(1.0)
+
+    # Todos sempre na mesma classe: nao ha variancia para explicar.
+    degenerado = _votos([["especifico_neutra"] * 4] * 3, PAINEL)
+    assert math.isnan(validacao_ia.calcular_fleiss_kappa(degenerado))
+
+    # Divisao 2x2 em todos os documentos fica abaixo do acaso.
+    dividido = _votos(
+        [
+            ["especifico_positiva", "especifico_positiva", "especifico_neutra", "especifico_neutra"],
+            ["especifico_neutra", "especifico_neutra", "especifico_positiva", "especifico_positiva"],
+        ],
+        PAINEL,
+    )
+    assert validacao_ia.calcular_fleiss_kappa(dividido) < 0.0
+
+
+def test_fleiss_kappa_recusa_entrada_invalida():
+    with pytest.raises(ValueError, match="classe conjunta invalida"):
+        validacao_ia.calcular_fleiss_kappa(
+            _votos([["especifico_positiva", "positiva", "especifico_neutra", "especifico_neutra"]], PAINEL)
+        )
+    with pytest.raises(ValueError, match="ao menos dois avaliadores"):
+        validacao_ia.calcular_fleiss_kappa(
+            pd.DataFrame({"gemini": ["especifico_neutra"]})
+        )
+
+
+def test_painel_resolve_unanimidade_maioria_e_desempate():
+    votos = _votos(
+        [
+            # unanime
+            ["especifico_positiva"] * 4,
+            # maioria 3x1
+            [
+                "especifico_negativa",
+                "especifico_negativa",
+                "especifico_negativa",
+                "especifico_neutra",
+            ],
+            # empate 2x2: vale o humano
+            [
+                "especifico_positiva",
+                "especifico_positiva",
+                "especifico_neutra",
+                "especifico_neutra",
+            ],
+            # 2x1x1 nao e maioria: vale o humano, mesmo isolado
+            [
+                "especifico_neutra",
+                "especifico_neutra",
+                "especifico_positiva",
+                "nao_especifico",
+            ],
+        ],
+        PAINEL,
+    )
+
+    gold = validacao_ia.consolidar_painel(votos, desempate="humano")
+
+    assert gold["origem_rotulo"].tolist() == [
+        "unanime",
+        "maioria",
+        "desempate",
+        "desempate",
+    ]
+    assert gold["classe_gold"].tolist() == [
+        "especifico_positiva",
+        "especifico_negativa",
+        "especifico_neutra",
+        "nao_especifico",
+    ]
+    assert gold["votos_na_classe"].tolist() == [4, 3, 2, 1]
+    assert gold["especifico_empresa"].tolist() == [True, True, True, False]
+    assert gold["direcao"].tolist() == ["positiva", "negativa", "neutra", "neutra"]
+
+
+def test_painel_exige_avaliador_de_desempate_existente():
+    votos = _votos([["especifico_neutra"] * 4], PAINEL)
+    with pytest.raises(ValueError, match="desempate ausente"):
+        validacao_ia.consolidar_painel(votos, desempate="terceiro")

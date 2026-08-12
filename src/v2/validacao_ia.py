@@ -403,6 +403,94 @@ def calcular_cohen_kappa(rotulos_validados: pd.DataFrame) -> float:
     return (observado - esperado) / (1.0 - esperado)
 
 
+def calcular_fleiss_kappa(votos: pd.DataFrame) -> float:
+    """Kappa de Fleiss para um painel com mais de dois avaliadores.
+
+    Recebe uma coluna por avaliador e uma linha por documento, com a classe
+    conjunta em cada célula.
+    """
+    if votos.empty:
+        raise ValueError("painel: tabela vazia")
+    if votos.shape[1] < 2:
+        raise ValueError("painel: sao necessarios ao menos dois avaliadores")
+    if votos.isna().any().any():
+        raise ValueError("painel: ha rotulo ausente")
+    invalidas = sorted(set(votos.to_numpy().ravel()) - set(CLASSES_CONJUNTAS))
+    if invalidas:
+        raise ValueError(f"painel: classe conjunta invalida: {invalidas}")
+
+    n_avaliadores = votos.shape[1]
+    contagens = pd.DataFrame(
+        {
+            classe: votos.eq(classe).sum(axis=1)
+            for classe in CLASSES_CONJUNTAS
+        }
+    )
+    # Concordância dentro de cada documento, corrigida pelo par possível.
+    por_documento = (
+        contagens.pow(2).sum(axis=1) - n_avaliadores
+    ) / (n_avaliadores * (n_avaliadores - 1))
+    observado = float(por_documento.mean())
+    proporcoes = contagens.sum() / (len(votos) * n_avaliadores)
+    esperado = float(proporcoes.pow(2).sum())
+    if math.isclose(esperado, 1.0, abs_tol=1e-15):
+        return float("nan")
+    return (observado - esperado) / (1.0 - esperado)
+
+
+def consolidar_painel(
+    votos: pd.DataFrame,
+    *,
+    desempate: str,
+) -> pd.DataFrame:
+    """Resolve o gold do painel por maioria, com desempate declarado.
+
+    Uma classe só vence quando tem mais da metade dos votos. Sem maioria, vale
+    o rótulo do avaliador de desempate.
+    """
+    if desempate not in votos.columns:
+        raise ValueError(f"painel: avaliador de desempate ausente: {desempate}")
+    if votos.empty:
+        raise ValueError("painel: tabela vazia")
+    invalidas = sorted(set(votos.to_numpy().ravel()) - set(CLASSES_CONJUNTAS))
+    if invalidas:
+        raise ValueError(f"painel: classe conjunta invalida: {invalidas}")
+
+    n_avaliadores = votos.shape[1]
+    minimo = n_avaliadores // 2 + 1
+    linhas = []
+    for indice, linha in votos.iterrows():
+        contagem = linha.value_counts()
+        vencedora = contagem.index[0]
+        apoio = int(contagem.iloc[0])
+        if apoio >= minimo:
+            origem = "unanime" if apoio == n_avaliadores else "maioria"
+            classe = str(vencedora)
+        else:
+            origem = "desempate"
+            classe = str(linha[desempate])
+            apoio = int(contagem.get(classe, 0))
+        linhas.append(
+            {
+                "indice": indice,
+                "classe_gold": classe,
+                "origem_rotulo": origem,
+                "votos_na_classe": apoio,
+                "avaliadores": n_avaliadores,
+            }
+        )
+    consolidado = pd.DataFrame(linhas).set_index("indice")
+    consolidado.index.name = votos.index.name
+    consolidado["especifico_empresa"] = consolidado["classe_gold"].ne(
+        "nao_especifico"
+    )
+    consolidado["direcao"] = [
+        classe.removeprefix("especifico_") if classe != "nao_especifico" else "neutra"
+        for classe in consolidado["classe_gold"]
+    ]
+    return consolidado
+
+
 def criar_tabela_divergencias(
     rotulos_validados: pd.DataFrame,
     *,
