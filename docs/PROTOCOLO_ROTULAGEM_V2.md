@@ -48,3 +48,25 @@ reportadas separadamente.
 O macro-F1 usa as classes conjuntas `não específico`, `específico positivo`,
 `específico negativo` e `específico neutro`. O gate só pode passar se as quatro
 classes aparecerem tanto nas previsões da amostra quanto no gold humano.
+
+## Classes com suporte insuficiente
+
+Uma classe com menos de 10 documentos no gold humano tem F1 dominado por ruído
+amostral: um ou dois desacordos movem a métrica de 0 a 1. Por isso o macro-F1
+que decide o gate é calculado apenas sobre as classes com suporte igual ou maior
+que 10, e exige pelo menos duas delas. O macro-F1 das quatro classes continua
+sendo calculado e reportado sempre, junto da lista de classes deixadas de fora e
+das métricas individuais de cada uma.
+
+O suporte é medido no **gold humano**, não nas previsões da IA, e isso é
+deliberado. Se a IA subdisparar uma classe — prever poucos casos de algo que os
+humanos veem com frequência —, o suporte no gold sobe, a classe volta a entrar
+no macro-F1 do gate e a falha é penalizada normalmente. A exclusão só acontece
+quando os próprios humanos também encontram poucos casos, isto é, quando a
+classe genuinamente não tem poder estatístico na amostra.
+
+Regra decidida em 12/08/2026, antes de existir qualquer rótulo humano e sem
+nenhum retorno ter sido calculado. O motivo é a distribuição observada do lote
+`ia-eventos-1.2.5`: 5 documentos não específicos em 795 classificações válidas
+(0,6%). Com 90 documentos na amostra, essa classe carregaria 25% do gate com um
+punhado de observações. O limiar de 0,70 e o gate de kappa ≥ 0,60 não mudam.

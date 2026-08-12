@@ -184,7 +184,113 @@ def test_divergencias_criam_fila_de_adjudicacao_sem_ia():
     assert not any("ia" in coluna.casefold() for coluna in divergencias.columns)
 
 
-def test_neutralidade_abstida_e_avaliada_e_cobertura_fica_separada():
+def _partes(classe: str) -> tuple[bool, str]:
+    especifico = classe != "nao_especifico"
+    return especifico, classe.removeprefix("especifico_") if especifico else "neutra"
+
+
+def _lote(
+    contagens: dict[str, int],
+    acertos: dict[str, int] | None = None,
+    erro_para: dict[str, str] | None = None,
+):
+    """Monta gold e predições com N documentos por classe conjunta."""
+    acertos = acertos or {}
+    erro_para = erro_para or {}
+    gold_linhas = []
+    ia_linhas = []
+    numero = 0
+    for classe, quantidade in contagens.items():
+        especifico, direcao = _partes(classe)
+        certos = acertos.get(classe, quantidade)
+        destino = erro_para.get(
+            classe,
+            "especifico_negativa"
+            if classe == "especifico_positiva"
+            else "especifico_positiva",
+        )
+        for indice in range(quantidade):
+            numero += 1
+            codigo = f"doc-{numero:03d}"
+            gold_linhas.append((codigo, especifico, direcao))
+            prev_esp, prev_dir = _partes(classe if indice < certos else destino)
+            ia_linhas.append(
+                (codigo, prev_esp, prev_dir, not prev_esp or prev_dir == "neutra")
+            )
+    return _predicoes(ia_linhas), _rotulos(gold_linhas)
+
+
+def test_classe_sem_suporte_sai_do_gate_mas_continua_reportada():
+    # Com n=3 e nenhum acerto, a classe zera o F1 e derruba sozinha a media das
+    # quatro; o gate roda sobre as tres que tem suporte.
+    ia, gold = _lote(
+        {
+            "especifico_positiva": 20,
+            "especifico_negativa": 20,
+            "especifico_neutra": 20,
+            "nao_especifico": 3,
+        },
+        acertos={"especifico_neutra": 14, "nao_especifico": 0},
+        erro_para={
+            "especifico_neutra": "nao_especifico",
+            "nao_especifico": "especifico_neutra",
+        },
+    )
+
+    resultado = validacao_ia.avaliar_ia_contra_gold(ia, gold, 0.80)
+
+    assert resultado.classes_subdimensionadas == ("nao_especifico",)
+    assert resultado.suporte_minimo_classe == validacao_ia.SUPORTE_MINIMO_CLASSE
+    linha = resultado.metricas_por_classe.set_index("classe").loc["nao_especifico"]
+    assert linha["suporte"] == 3
+    assert bool(linha["suporte_adequado"]) is False
+    # As quatro classes reprovariam; as tres com suporte aprovam.
+    assert resultado.macro_f1 < validacao_ia.LIMIAR_MACRO_F1
+    assert resultado.macro_f1_com_suporte >= validacao_ia.LIMIAR_MACRO_F1
+    assert resultado.aprovado_macro_f1 is True
+
+
+def test_ia_que_subdispara_classe_volta_a_pesar_no_gate():
+    # O gold é quem define suporte: se os humanos veem muitos casos que a IA
+    # não prevê, a classe reentra no gate e a falha aparece.
+    ia, gold = _lote(
+        {
+            "especifico_positiva": 20,
+            "especifico_negativa": 20,
+            "especifico_neutra": 20,
+            "nao_especifico": 20,
+        },
+        acertos={"nao_especifico": 1},
+    )
+
+    resultado = validacao_ia.avaliar_ia_contra_gold(ia, gold, 0.80)
+
+    assert resultado.classes_subdimensionadas == ()
+    assert resultado.macro_f1_com_suporte == pytest.approx(resultado.macro_f1)
+    assert resultado.aprovado_macro_f1 is False
+    assert resultado.aprovado is False
+
+
+def test_gate_reprova_quando_quase_nenhuma_classe_tem_suporte():
+    ia, gold = _lote(
+        {
+            "especifico_positiva": 12,
+            "especifico_negativa": 2,
+            "especifico_neutra": 2,
+            "nao_especifico": 2,
+        }
+    )
+
+    resultado = validacao_ia.avaliar_ia_contra_gold(ia, gold, 0.80)
+
+    assert len(resultado.classes_subdimensionadas) == 3
+    assert resultado.macro_f1 == pytest.approx(1.0)
+    assert resultado.aprovado_macro_f1 is False
+
+
+def test_neutralidade_abstida_e_avaliada_e_cobertura_fica_separada(monkeypatch):
+    # A regra de suporte minimo e testada a parte; aqui interessa a aritmetica.
+    monkeypatch.setattr(validacao_ia, "SUPORTE_MINIMO_CLASSE", 1)
     gold = _rotulos(
         [
             ("p", True, "positiva"),

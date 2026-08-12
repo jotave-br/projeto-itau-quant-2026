@@ -650,6 +650,11 @@ def _resumo(resultado: ResultadoAvaliacaoHumana) -> pd.DataFrame:
         [
             {
                 "macro_f1": avaliacao.macro_f1,
+                "macro_f1_com_suporte": avaliacao.macro_f1_com_suporte,
+                "classes_subdimensionadas": ";".join(
+                    avaliacao.classes_subdimensionadas
+                ),
+                "suporte_minimo_classe": avaliacao.suporte_minimo_classe,
                 "limiar_macro_f1": validacao_ia.LIMIAR_MACRO_F1,
                 "aprovado_macro_f1": avaliacao.aprovado_macro_f1,
                 "kappa_avaliadores": avaliacao.kappa_avaliadores,
@@ -694,6 +699,8 @@ def _extras(
     lote = resumo_lote.iloc[0]
     return {
         "macro_f1": float(avaliacao.macro_f1),
+        "macro_f1_com_suporte": float(avaliacao.macro_f1_com_suporte),
+        "classes_subdimensionadas": list(avaliacao.classes_subdimensionadas),
         "kappa_avaliadores": float(avaliacao.kappa_avaliadores),
         "cobertura": float(avaliacao.cobertura),
         "taxa_abstencao": float(avaliacao.taxa_abstencao),
@@ -734,6 +741,7 @@ def main(argv: list[str] | None = None) -> int:
         "adjudicacao": str(adjudicacao_path) if adjudicacao_path else None,
         "limiar_macro_f1": validacao_ia.LIMIAR_MACRO_F1,
         "limiar_kappa": validacao_ia.LIMIAR_KAPPA,
+        "suporte_minimo_classe": validacao_ia.SUPORTE_MINIMO_CLASSE,
     }
     try:
         chave_bruta = _ler_csv(chave_path)
@@ -763,12 +771,19 @@ def main(argv: list[str] | None = None) -> int:
             extras=extras,
         )
         log.info(
-            "macro-F1 %.4f | kappa %.4f | cobertura %.4f | gate %s",
+            "macro-F1 %.4f (gate %.4f) | kappa %.4f | cobertura %.4f | gate %s",
             resultado.avaliacao.macro_f1,
+            resultado.avaliacao.macro_f1_com_suporte,
             resultado.avaliacao.kappa_avaliadores,
             resultado.avaliacao.cobertura,
             "aprovado" if resultado.avaliacao.aprovado else "reprovado",
         )
+        if resultado.avaliacao.classes_subdimensionadas:
+            log.info(
+                "fora do macro-F1 do gate por suporte < %d: %s",
+                resultado.avaliacao.suporte_minimo_classe,
+                ", ".join(resultado.avaliacao.classes_subdimensionadas),
+            )
         return 0 if resultado.avaliacao.aprovado else 2
     except AdjudicacaoPendente as exc:
         destino = execucao.tabelas / "divergencias_para_adjudicacao.csv"

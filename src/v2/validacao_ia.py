@@ -22,6 +22,13 @@ CLASSES_CONJUNTAS = (
 LIMIAR_MACRO_F1 = 0.70
 LIMIAR_KAPPA = 0.60
 
+# F1 de uma classe com punhado de documentos é ruído. O gate usa só as classes
+# com suporte suficiente no gold; o suporte é medido no gold justamente para que
+# uma IA que subdispara a classe não escape — nesse caso o suporte sobe e a
+# classe volta a pesar. Ver docs/PROTOCOLO_ROTULAGEM_V2.md.
+SUPORTE_MINIMO_CLASSE = 10
+MIN_CLASSES_COM_SUPORTE = 2
+
 _COLUNAS_IA = {
     "direcao",
     "especifico_empresa",
@@ -90,6 +97,9 @@ class ResultadoValidacaoIA:
     matriz_confusao: pd.DataFrame
     metricas_por_classe: pd.DataFrame
     macro_f1: float
+    macro_f1_com_suporte: float
+    classes_subdimensionadas: tuple[str, ...]
+    suporte_minimo_classe: int
     cobertura: float
     taxa_abstencao: float
     n_total: int
@@ -541,14 +551,24 @@ def avaliar_ia_contra_gold(
             }
         )
     metricas = pd.DataFrame(linhas_metricas)
+    metricas["suporte_adequado"] = metricas["suporte"] >= SUPORTE_MINIMO_CLASSE
     macro_f1 = float(metricas["f1"].mean())
+    com_suporte = metricas[metricas["suporte_adequado"]]
+    macro_f1_com_suporte = (
+        float(com_suporte["f1"].mean()) if len(com_suporte) else float("nan")
+    )
+    subdimensionadas = tuple(
+        metricas.loc[~metricas["suporte_adequado"], "classe"].tolist()
+    )
     n_total = len(comparacao)
     n_abstencoes = int(comparacao["abster"].sum())
     n_cobertos = n_total - n_abstencoes
     cobertura = n_cobertos / n_total
     taxa_abstencao = n_abstencoes / n_total
     aprovado_macro = bool(
-        macro_f1 >= LIMIAR_MACRO_F1
+        math.isfinite(macro_f1_com_suporte)
+        and macro_f1_com_suporte >= LIMIAR_MACRO_F1
+        and len(com_suporte) >= MIN_CLASSES_COM_SUPORTE
         and metricas["suporte"].gt(0).all()
         and metricas["preditos"].gt(0).all()
     )
@@ -558,6 +578,9 @@ def avaliar_ia_contra_gold(
         matriz_confusao=matriz,
         metricas_por_classe=metricas,
         macro_f1=macro_f1,
+        macro_f1_com_suporte=macro_f1_com_suporte,
+        classes_subdimensionadas=subdimensionadas,
+        suporte_minimo_classe=SUPORTE_MINIMO_CLASSE,
         cobertura=cobertura,
         taxa_abstencao=taxa_abstencao,
         n_total=n_total,

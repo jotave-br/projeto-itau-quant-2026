@@ -208,7 +208,8 @@ def _mock_execucao(monkeypatch, tmp_path):
     return execucao, manifestos
 
 
-def test_reconcilia_divergencia_e_aprova_gates_com_aliases():
+def test_reconcilia_divergencia_e_aprova_gates_com_aliases(monkeypatch):
+    monkeypatch.setattr(validacao_ia, "SUPORTE_MINIMO_CLASSE", 1)
     ficha_a, ficha_b, chave, adjudicacao = _dados()
     ficha_b = ficha_b.rename(
         columns={
@@ -365,7 +366,8 @@ def test_recusa_colunas_extras_amostra_curta_e_resumo_adulterado():
         avaliar.normalizar_resumo_lote(resumo, chave_validada)
 
 
-def test_macro_f1_e_kappa_reprovam_seus_gates():
+def test_macro_f1_e_kappa_reprovam_seus_gates(monkeypatch):
+    monkeypatch.setattr(validacao_ia, "SUPORTE_MINIMO_CLASSE", 1)
     ficha_a, ficha_b, chave, adjudicacao = _dados()
     trocas = {"positiva": "negativa", "negativa": "positiva"}
     chave_f1 = chave.copy()
