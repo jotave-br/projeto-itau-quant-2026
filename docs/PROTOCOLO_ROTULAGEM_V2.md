@@ -1,6 +1,6 @@
 # Protocolo de rotulagem da V2
 
-Versão: `rotulagem-eventos-1.1.0`
+Versão: `rotulagem-eventos-2.0.0`
 
 O objetivo é classificar o efeito fundamental esperado da informação sobre o
 valor das ações da companhia emissora. Não é uma previsão da reação observada
@@ -48,6 +48,38 @@ reportadas separadamente.
 O macro-F1 usa as classes conjuntas `não específico`, `específico positivo`,
 `específico negativo` e `específico neutro`. O gate só pode passar se as quatro
 classes aparecerem tanto nas previsões da amostra quanto no gold humano.
+
+## Painel de referência multi-modelo
+
+Registrado em 12/08/2026, antes de qualquer consolidação ter sido executada.
+
+O desenho original previa dois avaliadores humanos independentes. Ele foi
+substituído por um painel de quatro modelos mais uma leitura humana, por
+decisão do autor, diante da inviabilidade de obter dois rotuladores humanos
+qualificados. Isto **não** é validação humana cega e não deve ser descrito como
+tal em nenhum lugar. É comparação do classificador local contra um painel de
+referência, com uma leitura humana como voto e desempate.
+
+Avaliadores: `qwen_max`, `kimi_26`, `gemini`, `opus` e `humano`.
+
+Regra de composição, fixada antes de qualquer consolidação: entra no painel todo
+avaliador que devolveu os 90 documentos. Dois modelos ficaram de fora por
+entrega incompleta, não por discordância — `kimi_k3` devolveu 45 documentos e
+`grok_45_fast` devolveu 42 documentos distintos, repetidos, com 48 ausentes.
+Nenhum avaliador foi incluído ou excluído em função dos rótulos que produziu.
+
+Cada modelo recebeu apenas as regras 1 a 6 e os textos, em conversa separada,
+sem acesso aos rótulos de qualquer outro avaliador e sem informação sobre a
+distribuição esperada das classes.
+
+Gold: vence a classe com mais da metade dos votos; sem maioria, vale a leitura
+humana. A origem de cada rótulo fica registrada como `unanime`, `maioria` ou
+`desempate`.
+
+Limitação a declarar no relatório: quatro LLMs não são quatro avaliadores
+independentes. Compartilham corpus de treino e convenções de alinhamento, então
+erro correlacionado permanece possível e a concordância entre eles superestima a
+acurácia. O kappa de Fleiss do painel mede convergência, não correção.
 
 ## Classes com suporte insuficiente
 

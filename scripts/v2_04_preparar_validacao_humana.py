@@ -34,7 +34,7 @@ RESUMO_INTERNO_PADRAO = (
     RAIZ / "data" / "processed" / "cvm_ipe" / "resumo_validacao_humana.csv"
 )
 PROTOCOLO_ROTULAGEM = RAIZ / "docs" / "PROTOCOLO_ROTULAGEM_V2.md"
-VERSAO_PROTOCOLO = "rotulagem-eventos-1.1.0"
+VERSAO_PROTOCOLO = "rotulagem-eventos-2.0.0"
 TAMANHO_PADRAO = 90
 SEED_VALIDACAO = 20260811
 MODELO_CONGELADO = "qwen3:14b"
