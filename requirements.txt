@@ -32,6 +32,11 @@ matplotlib==3.10.9
 # cache em CSV (lento e grande) ou pickle (fragil entre versoes).
 pyarrow==23.0.1
 
+# --- Documentos CVM (V2) ---
+# Extracao de texto dos Fatos Relevantes em PDF. O arquivo bruto e preservado
+# porque alguns documentos podem exigir revisao manual ou OCR.
+pypdf==6.15.0
+
 # --- Testes ---
 # Dependencia de desenvolvimento, nao de analise. Os testes anti-lookahead
 # verificam as fronteiras temporais do backtest.
