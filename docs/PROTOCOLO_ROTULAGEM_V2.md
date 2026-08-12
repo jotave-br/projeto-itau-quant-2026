@@ -1,6 +1,6 @@
 # Protocolo de rotulagem da V2
 
-Versão: `rotulagem-eventos-1.0.0`
+Versão: `rotulagem-eventos-1.1.0`
 
 O objetivo é classificar o efeito fundamental esperado da informação sobre o
 valor das ações da companhia emissora. Não é uma previsão da reação observada
