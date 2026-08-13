@@ -154,6 +154,45 @@ três explicações que este desenho não separa — rotulagem ruim, rotulagem b
 medindo a grandeza errada, ou ausência de efeito lead-lag condicionado. O
 relatório precisa declarar as três em vez de atribuir o nulo à primeira.
 
+## Emenda: backtest exploratório após reprovação do gate
+
+Escrita em 12/08/2026, antes de qualquer retorno da V2 ter sido calculado e
+antes de a orquestração do backtest existir.
+
+O gate reprovou. O painel de referência produziu kappa de Fleiss de 0,7032, que
+passa, e macro-F1 de 0,6876 nas classes com suporte, contra limiar de 0,70. A
+classe `nao_especifico` ficou com suporte zero no gold, o que também reprova a
+exigência de presença das quatro classes. O limiar de 0,70 não é alterado.
+
+A especificação original proíbe rodar P&L antes da aprovação. Esta emenda abre
+uma exceção declarada e limitada:
+
+- o backtest a seguir é **exploratório**, não confirmatório;
+- qualquer que seja o resultado, ele não constitui evidência de que a estratégia
+  funciona, e não pode ser apresentado como tal;
+- ele será reportado sempre ao lado da reprovação do gate, nunca isolado;
+- nenhuma mudança de prompt, limiar, holding, top N, modelo ou desenho de
+  amostra será feita com base no que ele mostrar.
+
+Motivo de rodar mesmo reprovado: o diagnóstico é específico e vale medir. A IA
+recuperou 16 de 16 eventos positivos e 18 de 18 negativos do gold, sem nenhuma
+inversão de sinal, e errou apenas por excesso — 31 dos 56 documentos neutros do
+gold receberam direção. O erro é diluição, não inversão. Saber se essa diluição
+zera o alfa ou apenas o reduz informa se uma V3 vale a pena, e um nulo medido é
+conclusão mais forte que uma pergunta em aberto.
+
+Hipótese registrada antes da execução, formulada pelo autor: dada a estrutura de
+erro por diluição, o alfa esperado é zero ou levemente positivo. Um resultado
+fortemente positivo seria surpresa e exigiria suspeita de erro de implementação
+antes de qualquer comemoração.
+
+Limite de poder, registrado antes da execução: o corpus tem 76 eventos
+direcionais em 882 documentos, ao longo de dez anos e cerca de vinte papéis, e o
+painel sugere que perto de metade dessas direções não se sustenta. Com essa
+contagem efetiva, um alfa pequeno e verdadeiro provavelmente não é distinguível
+de zero pela inferência por blocos. Um resultado nulo deve ser lido como
+"não foi possível medir", e não como "não existe efeito".
+
 ## Fora do escopo
 
 Não serão adicionados notícias gerais, RAG, embeddings, fine-tuning, classificação
