@@ -162,6 +162,10 @@ def main(argv: list[str] | None = None) -> int:
                     sinal, par, calendario, cotahist=cot, h=holding
                 )
                 resumos.append(_resumo(nome, resultado, holding))
+                if holding == HORIZONTES[0]:
+                    resultado.pnl_diario[["pnl_liquido"]].to_csv(
+                        destino / f"pnl_diario_{nome}.csv", encoding="utf-8-sig"
+                    )
                 if nome == "ia_mais_rede" and holding == HORIZONTES[0]:
                     resultado.pnl_diario.to_csv(
                         destino / "pnl_diario_principal.csv",
