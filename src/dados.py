@@ -66,17 +66,8 @@ TEXTO = ["CODNEG", "NOMRES", "ESPECI", "CODISI", "MODREF"]
 # no arquivo de 2015. Conta todas as linhas, incluindo header e trailer.
 TRAILER_TOTREG = (31, 42)
 
-# ESPECI e um campo composto de 10 caracteres: tipo do papel + marcador de
-# evento + segmento de governanca. Exemplos do arquivo de 2015:
-#
-#     "ON      NM"   ordinaria, Novo Mercado
-#     "ON  ED  NM"   ordinaria, ex-dividendo naquele dia, Novo Mercado
-#     "UNT     N2"   unit, Nivel 2
-#     "DRN       "   BDR nao-patrocinado
-#
-# Os marcadores ED, EJ, EG, EB, ES, ER, EX so aparecem no dia do evento, o que
-# faz o ESPECI do mesmo ticker mudar de um dia para o outro - comparar a string
-# inteira quebraria de forma intermitente. Dai o tipo ser o primeiro token.
+# ESPECI combina tipo, marcador de evento e segmento. Como os marcadores mudam
+# ao longo da série, a classificação usa apenas o primeiro token.
 TIPOS_ACEITOS = frozenset({
     "ON",                                    # ordinaria
     "PN", "PNA", "PNB", "PNC", "PND", "PNE", "PNF",   # preferenciais e classes
@@ -88,32 +79,11 @@ TIPOS_BLOQUEADOS = frozenset({
     "CI",                          # cota de fundo (ETF, FII)
     "IBO", "SML",                  # instrumentos de indice (IBOV11, SMLL11)
 })
-# "SML" e o instrumento do Indice Small Cap (SMLL11), irmao do IBOV11. No
-# arquivo aparece como "SML)", com o parentese solto vindo da propria B3, que
-# escreveu o rotulo truncado. Confirmado no registro cru: NOMRES = "SMALL CAP",
-# ISIN = BRSMLLINDM18, tipo IND, ou seja, nao e acao. A entrada aqui e "SML"
-# porque a normalizacao ja tira a pontuacao.
-#
-# O DRE so aparece em 2022, quando a B3 passou a listar BDRs de ETFs
-# estrangeiros (BIAU39, BEWZ39, GDXB39...): 155 tickers com mediana de 2
-# negocios por dia. Foram descobertos porque o pipeline parou num tipo nao
-# classificado em vez de deixar passar.
-#
-# Nao usamos regra do tipo "comeca com DR entao e BDR": se aparecer um DR4 num
-# ano futuro, melhor o pipeline parar e alguem olhar do que acertar por acidente.
+# A normalização transforma o rótulo truncado "SML)" em "SML". Tipos novos não
+# são inferidos por prefixo: interrompem o pipeline para revisão explícita.
 
-# Tipo declarado no ISIN brasileiro, posicoes 6:9. Checagem independente contra
-# o ESPECI: se os dois discordam, tem algo errado.
-#     BRPETR ACN PR6   ACN = acao
-#     BRSANB CDA M13   CDA = certificado de deposito de acoes (unit)
-#     BRBBTG UNT 007   UNT = unit
-#     BRCHVX BDR 008   BDR = BDR
-#     BRBOVA CTF 003   CTF = cota de fundo
-#
-# As units nao usam um codigo unico: a maioria (SANB11, TAEE11, KLBN11, SULA11,
-# ALUP11, STBP11, VVAR11, CTAX11, RNEW11, ENGI11) aparece como CDA, mas BBTG11
-# aparece como UNT. Descoberto por esta checagem redundante, que acusou 246
-# divergencias contra o ESPECI, todas de BBTG11.
+# O tipo do ISIN (posições 6:9) serve como checagem independente do ESPECI.
+# Units podem aparecer como CDA ou UNT, portanto ambos são aceitos.
 ISIN_ACOES = frozenset({"ACN", "CDA", "UNT"})
 
 # Categorias que o ISIN identifica como nao sendo acao brasileira. Vem antes do
@@ -216,7 +186,6 @@ def validar_arquivo_bruto(caminho: Path) -> dict:
     if not linhas:
         raise ErroLayoutCotahist(f"{caminho.name}: arquivo vazio")
 
-    # 1) toda linha com exatamente 245 caracteres
     larguras = {len(ln) for ln in linhas}
     if larguras != {LARGURA_LINHA}:
         raise ErroLayoutCotahist(
@@ -224,20 +193,18 @@ def validar_arquivo_bruto(caminho: Path) -> dict:
             f"encontrei larguras {sorted(larguras)}"
         )
 
-    # 2) header 00 na primeira linha, trailer 99 na ultima
     if linhas[0][:2] != "00":
         raise ErroLayoutCotahist(f"{caminho.name}: primeira linha nao e header 00")
     if linhas[-1][:2] != "99":
         raise ErroLayoutCotahist(f"{caminho.name}: ultima linha nao e trailer 99")
 
-    # 3) so existem os tres tipos de registro conhecidos
     tipos = {ln[:2] for ln in linhas}
     if not tipos <= {"00", "01", "99"}:
         raise ErroLayoutCotahist(
             f"{caminho.name}: tipos de registro inesperados: {sorted(tipos - {'00','01','99'})}"
         )
 
-    # 4) contagem do trailer. A B3 mudou a convencao deste campo em 2025: ate
+    # A B3 mudou a convenção do trailer em 2025: até
     # 2024 ele conta todas as linhas, incluindo header e trailer; de 2025 em
     # diante conta so os registros de cotacao. Verificado nos arquivos de
     # 2015/2020/2024 contra 2025/2026. Aceitamos as duas e registramos qual foi
@@ -350,7 +317,6 @@ def validar_dataframe(df: pd.DataFrame, tolerancia_voltot: float = 0.01) -> dict
     """
     rel: dict = {"registros": len(df)}
 
-    # Escalas e sinais
     for c in ["VOLTOT", "TOTNEG", "QUATOT"]:
         neg = int((df[c] < 0).sum())
         if neg:
@@ -360,7 +326,6 @@ def validar_dataframe(df: pd.DataFrame, tolerancia_voltot: float = 0.01) -> dict
     precos_zerados = int((df["PREULT"] <= 0).sum())
     rel["preco_ultimo_nao_positivo"] = precos_zerados
 
-    # Coerencia entre maxima, minima, abertura, medio e fechamento
     com_preco = df[df["PREULT"] > 0]
     incoerentes = com_preco[
         (com_preco["PREMIN"] > com_preco["PREMAX"])
@@ -371,16 +336,8 @@ def validar_dataframe(df: pd.DataFrame, tolerancia_voltot: float = 0.01) -> dict
     ]
     rel["precos_incoerentes"] = len(incoerentes)
 
-    # A chave (DATA, CODNEG, TPMERC, DISMES) nao e unica no arquivo inteiro, e
-    # isso esta certo: no mercado a termo o mesmo papel tem varios contratos no
-    # mesmo dia, com prazos e precos diferentes (BBAS3T aparece 4 vezes em
-    # 02/01/2015, de R$ 22,53 a R$ 23,21).
-    #
-    # A unicidade que importa aqui e dentro do pool de candidatos - a vista,
-    # lote padrao e allowlist de tipo de papel -, onde tem que haver uma linha
-    # por (data, ticker); duplicata ali desmontaria o painel de precos. A
-    # allowlist faz falta nesta conta: sem ela o IBOV11 entra e reporta preco
-    # maximo de R$ 56.350, que parece erro de escala e nao e.
+    # Contratos a termo podem repetir a chave no arquivo completo. A unicidade
+    # exigida é apenas por data e ticker dentro do pool de candidatos à vista.
     pool = df[
         df["TPMERC"].isin(("010",))
         & df["CODBDI"].isin(("02",))
@@ -397,12 +354,8 @@ def validar_dataframe(df: pd.DataFrame, tolerancia_voltot: float = 0.01) -> dict
             "padrao. O painel de precos ficaria ambiguo."
         )
 
-    # Escala do VOLTOT, conferida contra quantidade x preco medio. O PREMED so
-    # tem 2 casas decimais, entao em papel de centavos o erro de arredondamento
-    # e proporcionalmente enorme (abaixo de R$ 0,10, mais de 40% dos registros
-    # divergem em mais de 1%) - e aritmetica, nao defeito do arquivo. Por isso a
-    # tolerancia so vale no subconjunto liquido, que e o que chega ao estudo: em
-    # 2015 da erro mediano de 0,035%, com 0,01% dos registros acima de 1%.
+    # A tolerância de VOLTOT é avaliada no subconjunto líquido porque o PREMED,
+    # com duas casas, produz grande erro relativo em papéis de centavos.
     amostra = df[(df["QUATOT"] > 0) & (df["PREMED"] > 0) & (df["VOLTOT"] > 0)]
     if len(amostra):
         erro = ((amostra["VOLTOT"] - amostra["QUATOT"] * amostra["PREMED"])
@@ -426,11 +379,8 @@ def validar_dataframe(df: pd.DataFrame, tolerancia_voltot: float = 0.01) -> dict
                     "liquidos"
                 )
 
-    # Faixa de precos, para pegar erro de escala decimal. Sai separada para o
-    # arquivo inteiro e para o pool de candidatos: no arquivo inteiro o maximo de
-    # 2015 e R$ 68.000, que assusta ate ver que e IBOVT68E, uma opcao sobre o
-    # Ibovespa. Dentro do pool o maximo e R$ 325 (APTI4), small cap cara e pouco
-    # negociada, mas legitima.
+    # A faixa de preços é reportada separadamente para não confundir opções de
+    # alto valor nominal com erros de escala no pool de candidatos.
     if len(com_preco):
         rel["preco_min_arquivo"] = float(com_preco["PREULT"].min())
         rel["preco_max_arquivo"] = float(com_preco["PREULT"].max())
@@ -489,15 +439,8 @@ def filtrar_acoes_a_vista(
     # levantaria erro a toa.
     candidatos = df[df["TPMERC"].isin(tpmerc) & df["CODBDI"].isin(codbdi)]
 
-    # Ordem de classificacao:
-    #   1. ISIN diz que nao e acao (BDR/CTF/IND) -> bloqueia
-    #   2. ESPECI na allowlist                   -> aceita
-    #   3. ESPECI na blocklist                   -> bloqueia
-    #   4. nenhum dos anteriores                 -> para e pede classificacao
-    #
-    # O ISIN vem primeiro porque o ESPECI e inconsistente nos instrumentos de
-    # indice. O passo 4 existe para o caso que importa: um tipo de acao novo,
-    # com ISIN dizendo ACN/CDA/UNT e rotulo de ESPECI desconhecido.
+    # O ISIN tem precedência porque o ESPECI é inconsistente para instrumentos
+    # de índice. Combinações desconhecidas interrompem a classificação.
     nao_acao_por_isin = candidatos["ISIN_TIPO"].isin(ISIN_NAO_ACOES)
 
     fora = candidatos[
@@ -505,8 +448,6 @@ def filtrar_acoes_a_vista(
         & ~candidatos["TIPO_PAPEL"].isin(TIPOS_ACEITOS | TIPOS_BLOQUEADOS)
     ]
     if len(fora):
-        # A mensagem ja traz o que o ISIN diz, quantos tickers sao e quao
-        # liquidos, para classificar na hora em vez de abrir uma investigacao.
         partes = []
         for tp, g in fora.groupby("TIPO_PAPEL"):
             isin = g["ISIN_TIPO"].value_counts().head(3).to_dict()
@@ -773,7 +714,6 @@ def baixar_yfinance_lote(
     for tentativa in range(1, max_tentativas + 1):
         if not faltando:
             break
-        # Primeira passada em lote, as seguintes individuais.
         lote = tamanho_lote if tentativa == 1 else 1
         if tentativa > 1:
             espera = YF_ESPERA_BASE * (2 ** (tentativa - 2))

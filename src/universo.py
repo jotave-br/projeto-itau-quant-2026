@@ -94,16 +94,12 @@ def ranking_liquidez_pit(
     # padrao do pandas nao e estavel, e posicao que depende do algoritmo de
     # ordenacao nao e reproduzivel.
     r = r.sort_index().sort_values("liquidez", ascending=False, kind="mergesort")
-    # Posicao so entre os elegiveis: papel com serie furada nao deve empurrar os
-    # outros para baixo.
     r["posicao"] = r["elegivel"].cumsum().where(r["elegivel"])
     r["janela"] = janela.rotulo
     r["pregoes_na_janela"] = pregoes_janela
     return r
 
 
-# Motivos de exclusao da selecao final. Um value_counts sobre eles da o funil
-# completo, que e como a selecao presta contas do que deixou de fora.
 MOTIVO_NAO_ELEGIVEL = "nao_elegivel"
 MOTIVO_SEM_NEGOCIACAO_NA_FORMACAO = "sem_negociacao_no_pregao_de_formacao"
 MOTIVO_ISIN_INVALIDO = "isin_invalido"
@@ -217,8 +213,6 @@ def melhor_posicao_por_ticker(
     if not registros:
         return pd.DataFrame()
 
-    # Ordenado por posicao, a melhor janela de cada ticker sai de um
-    # drop_duplicates, sem lambda de agregacao.
     todos = pd.concat(registros).reset_index().sort_values("posicao")
 
     melhor = todos.groupby("CODNEG").agg(
@@ -319,10 +313,8 @@ def alcance_pit(
         linhas.append({
             "ticker": tk,
             "data": data.date(),
-            # descritivo: nao ordena fila nem decide efeito
             "melhor_posicao_qualquer_janela": p_global,
             "faixa_melhor_qualquer_janela": st_global,
-            # e isto que decide
             "status_treino_na_data": st_treino,
             "melhor_posicao_treino_na_data": p_treino,
             "status_teste_na_data": st_teste,

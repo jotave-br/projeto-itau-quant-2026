@@ -8,7 +8,6 @@ from src import backtest, pares, setores, universo
 from src.config import LiquidezConfig, WalkForwardConfig
 
 
-# construtores dos cenarios
 def _papel(ticker, datas, voltot, emissor=None, tipo="ON", codisi=None):
     if codisi is None:
         codisi = f"BR{(emissor or ticker[:4]).ljust(4, 'X')[:4]}ACNOR0"
@@ -74,16 +73,12 @@ def test_um_ticker_por_emissor():
 
     sel = universo.selecionar_universo(painel, j, LiquidezConfig())
 
-    # o emissor vem do parser validado, nao de fatia cega do ISIN
     assert sel.loc["PETR4", "emissor_id"] == "PETR"
     assert sel.loc["PETR4", "motivo_exclusao"] == ""
     assert sel.loc["PETR4", "posicao_final"] == 1
-    # a classe menos liquida do emissor sai, com motivo contabilizado
     assert sel.loc["PETR3", "motivo_exclusao"] == universo.MOTIVO_CLASSE_MENOS_LIQUIDA
     assert pd.isna(sel.loc["PETR3", "posicao_final"])
-    # ISIN invalido nao vira emissor inventado: fica fora, contado
     assert sel.loc["RUIM3", "motivo_exclusao"] == universo.MOTIVO_ISIN_INVALIDO
-    # a posicao final e recontada entre os selecionados, sem buracos
     assert sel.loc["VALE3", "posicao_final"] == 2
 
 
@@ -98,7 +93,6 @@ def test_ticker_extinto_no_treino_nao_entra_e_a_classe_viva_herda():
     datas = pd.bdate_range("2015-01-01", periods=900)
     j, _ = _janela_e_formacao(datas)
     pregoes_treino = datas[datas < j.treino_fim]
-    # morre 10 pregoes antes do fim do treino: cobertura ainda passa de 95%
     vivas_ate = pregoes_treino[:-10]
 
     painel = pd.concat([
@@ -112,7 +106,6 @@ def test_ticker_extinto_no_treino_nao_entra_e_a_classe_viva_herda():
     assert sel.loc["VALE5", "motivo_exclusao"] == \
         universo.MOTIVO_SEM_NEGOCIACAO_NA_FORMACAO
     assert pd.isna(sel.loc["VALE5", "posicao_final"])
-    # a classe viva representa o emissor, apesar de menos liquida
     assert sel.loc["VALE3", "motivo_exclusao"] == ""
     assert sel.loc["PETR4", "posicao_final"] == 1
     assert sel.loc["VALE3", "posicao_final"] == 2
@@ -139,7 +132,6 @@ def test_units_nao_pareiam_com_acao_do_mesmo_emissor():
     assert sel.loc["SANB3", "motivo_exclusao"] == universo.MOTIVO_CLASSE_MENOS_LIQUIDA
     assert "SANB3" not in set(p["lider"]) | set(p["seguidora"])
     assert (p["emissor_lider"] != p["emissor_seguidora"]).all()
-    # o unico par possivel e entre emissores distintos, com a unit na frente
     assert p[["lider", "seguidora"]].values.tolist() == [["SANB11", "ITUB4"]]
 
 
@@ -159,7 +151,6 @@ def test_pares_sao_do_mesmo_setor():
          "setor": "Petroleo", "subsetor": "Exploracao"},
         {"ticker": "PRIO3", "emissor": "PRIO",
          "setor": "Petroleo", "subsetor": "Exploracao"},
-        # mesmo setor, subsetor diferente: nao pareia - a chave e o par
         {"ticker": "QUIM3", "emissor": "QUIM",
          "setor": "Petroleo", "subsetor": "Quimicos"},
         {"ticker": "ITUB4", "emissor": "ITUB",
@@ -183,7 +174,6 @@ def test_lider_e_mais_liquida_que_seguidora():
     j, formacao = _janela_e_formacao(datas)
     painel = pd.concat([
         _papel("CCCC3", datas, 3e9),
-        # empate exato de liquidez: o desempate e deterministico, alfabetico
         _papel("BBBB3", datas, 1e9),
         _papel("AAAA3", datas, 1e9),
     ], ignore_index=True)
@@ -254,7 +244,6 @@ def test_pares_nao_sao_escolhidos_por_desempenho():
                                  cfg.faixas)
 
     constantes = _pares_com_precos({t: 10.0 for t, _ in tickers})
-    # retornos radicalmente diferentes por papel: tendencias opostas
     n = len(datas)
     tendencias = _pares_com_precos({
         "AAAA3": [10 * 1.001 ** i for i in range(n)],
@@ -281,7 +270,6 @@ def test_sem_classificacao_confirmada_na_formacao_fica_fora():
     tabela = _tabela_setores([
         {"ticker": "AAAA3", "emissor": "AAAA", "setor": "S", "subsetor": "X"},
         {"ticker": "BBBB3", "emissor": "BBBB", "setor": "S", "subsetor": "X"},
-        # confirmada, porem valida so depois da formacao desta janela
         {"ticker": "LACU3", "emissor": "LACU", "setor": "S", "subsetor": "X",
          "inicio": "2020-01-01"},
     ])
@@ -296,11 +284,8 @@ def test_sem_classificacao_confirmada_na_formacao_fica_fora():
     assert p[["lider", "seguidora"]].values.tolist() == [["AAAA3", "BBBB3"]]
 
 
-# alcance PIT
-#
-# A distincao que estes testes protegem: a melhor posicao que o papel ja teve e
-# descritiva; a posicao na janela que contem a data e o que decide se o evento
-# importa. Confundir as duas promove evento antigo por liquidez posterior.
+# A elegibilidade usa a janela que contém a ocorrência; o ranking global é
+# apenas descritivo e não pode promover eventos antigos por liquidez futura.
 def _painel_liquidez(niveis_por_periodo, pregoes=1000, inicio="2015-01-01"):
     """
     `niveis_por_periodo` mapeia ticker -> (voltot antes do corte, depois).
@@ -326,7 +311,6 @@ def test_faixa_na_data_difere_da_melhor_faixa_global():
     """
     cfg = LiquidezConfig()
     niveis = {f"P{i:02d}": (1e9 / (i + 1), 1e9 / (i + 1)) for i in range(30)}
-    # O alvo comeca mal colocado e melhora muito depois do corte.
     niveis["ALVO3"] = (1.0, 1e12)
     painel, corte = _painel_liquidez(niveis)
     janelas = backtest.gerar_janelas(pd.Timestamp("2015-01-01").date(),
@@ -385,15 +369,11 @@ def test_data_fora_de_qualquer_janela_nao_afeta_estimacao():
     assert r["janelas_treino_contendo_a_data"] == 0
     assert bool(r["pode_afetar_estimacao"]) is False
     assert r["status_treino_na_data"] == universo.STATUS_SEM_JANELA
-    # a informacao descritiva continua disponivel
     assert r["faixa_melhor_qualquer_janela"] == "top20"
 
 
-# estados exclusivos x alcance cumulativo
-#
-# Sao leituras diferentes do mesmo dado e nao podem ser confundidas: um caso na
-# 58a posicao tem estado exclusivo top60, e no cumulativo aparece em top60 e em
-# top100.
+# Estado exclusivo e alcance cumulativo são leituras distintas: a posição 58
+# pertence ao top 60, mas também está contida no alcance top 100.
 def test_data_sem_nenhuma_janela():
     cfg = LiquidezConfig()
     niveis = {f"P{i:02d}": (1e9 / (i + 1), 1e9 / (i + 1)) for i in range(30)}
@@ -420,7 +400,6 @@ def test_ticker_ausente_da_janela_nao_e_o_mesmo_que_nao_elegivel():
         "DATA": datas, "CODNEG": f"P{i:02d}", "VOLTOT": 1e9 / (i + 1),
         "TOTNEG": 1000, "PREULT": 10.0, "CODISI": f"BRP{i:02d}ACNOR0",
         "TIPO_PAPEL": "ON", "NOMRES": f"P{i}"}) for i in range(30)]
-    # SOZINHO3 so existe no fim da amostra: ausente das janelas iniciais.
     partes.append(pd.DataFrame({
         "DATA": datas[-50:], "CODNEG": "SOZINHO3", "VOLTOT": 1e9,
         "TOTNEG": 1000, "PREULT": 10.0, "CODISI": "BRSOZIACNOR0",
@@ -443,7 +422,6 @@ def test_ticker_presente_mas_nao_elegivel_na_janela():
         "DATA": datas, "CODNEG": f"P{i:02d}", "VOLTOT": 1e9 / (i + 1),
         "TOTNEG": 1000, "PREULT": 10.0, "CODISI": f"BRP{i:02d}ACNOR0",
         "TIPO_PAPEL": "ON", "NOMRES": f"P{i}"}) for i in range(30)]
-    # FURADO3 negocia so um terco dos pregoes: reprova por cobertura.
     partes.append(pd.DataFrame({
         "DATA": datas[::3], "CODNEG": "FURADO3", "VOLTOT": 1e9,
         "TOTNEG": 1000, "PREULT": 10.0, "CODISI": "BRFURAACNOR0",

@@ -12,7 +12,6 @@ from dataclasses import dataclass, field, asdict
 from datetime import date
 from typing import Literal
 
-# Uma semente para o projeto inteiro (bootstrap, sorteio dos placebos).
 SEED: int = 42
 
 
@@ -31,8 +30,6 @@ class PeriodoConfig:
     inicio: date = date(2015, 1, 1)
     fim: date | None = None  # None = ate a ultima data disponivel nos dados
 
-    # Robustez: repetir tudo so nos ultimos N anos, para ver se o efeito e
-    # estavel ou so existe no passado distante.
     subamostra_recente_anos: int = 2
 
 
@@ -48,7 +45,6 @@ class WalkForwardConfig:
     treino_meses: int = 24
     teste_meses: int = 3  # reestimacao trimestral
 
-    # Robustez: mesmas janelas de teste, treino mais curto e mais longo.
     treinos_robustez_meses: tuple[int, ...] = (12, 36)
 
     # Sinal observado no fechamento de t, posicao aberta no fechamento de t+1.
@@ -66,18 +62,14 @@ class LiquidezConfig:
     liquidas" ja seria lookahead disfarcado de definicao de universo.
     """
 
-    # Faixa principal da analise.
     top_n: int = 40
 
     # Faixas rodadas em paralelo no teste de nao-sincronia: efeito que so
     # aparece nas faixas mais amplas (menos liquidas) e suspeito.
     faixas: tuple[int, ...] = (20, 40, 60, 100)
 
-    # Fracao minima de pregoes com dado valido para o ticker ser elegivel.
     cobertura_minima: float = 0.95
 
-    # Fracao minima de pregoes em que o ticker realmente negociou (volume > 0)
-    # dentro da janela de treino.
     proporcao_minima_dias_negociados: float = 0.95
 
     min_pregoes_treino: int = 400
@@ -103,8 +95,6 @@ class NaoSincroniaConfig:
     # o COTAHIST diario nao informa o horario do ultimo negocio.
     min_negocios_dia: int = 10
 
-    # Abaixo deste percentil do volume do proprio ticker, o dia conta como
-    # negociacao rarefeita.
     percentil_volume_baixo: float = 0.10
 
     # Numero minimo de fechamentos iguais em sequencia para marcar o dia. Com 2,
@@ -112,13 +102,8 @@ class NaoSincroniaConfig:
     # reprova um ticker inteiro.
     max_precos_repetidos: int = 2
 
-    # Acima desta fracao de pregoes com fechamento repetido a serie e tratada
-    # como quebrada, e nao apenas iliquida. Limiar frouxo de proposito: a taxa
-    # cai de 17,2% no decil menos liquido para 1,2% no mais liquido, entao 50%
-    # so pega papel inutilizavel (RJCP3 tem 99,4%, com 155 fechamentos iguais
-    # seguidos). Excluir os iliquidos aqui destruiria o teste central, que
-    # precisa deles para mostrar se o efeito depende de preco velho - quem
-    # controla exposicao a iliquidez e a faixa de liquidez, nao este filtro.
+    # O limite separa séries quebradas de papéis apenas ilíquidos; excluir estes
+    # últimos aqui eliminaria justamente o grupo usado no teste de preço velho.
     max_frac_fechamento_repetido: float = 0.50
 
 
@@ -194,13 +179,10 @@ class EstrategiaConfig:
     # tratar operacoes sobrepostas como observacoes independentes.
     safras_sobrepostas: bool = True
 
-    # Menos dinheiro em papel agitado, mais em papel calmo, para uma acao so
-    # nao dominar o resultado.
     sizing: Literal["vol_target", "igual"] = "vol_target"
     janela_vol_dias: int = 60
     vol_alvo_anual: float = 0.10
 
-    # Teto de peso por posicao, como fracao da exposicao bruta.
     peso_maximo_por_posicao: float = 0.10
 
     # Long-short e o teste limpo do sinal; long-only mede implementabilidade
@@ -218,15 +200,12 @@ class CustosConfig:
     difusao encontrada e negociavel.
     """
 
-    # Metade do spread de compra e venda, paga em cada ponta.
     meio_spread_bps: float = 5.0
 
     slippage_bps: float = 5.0
 
-    # Corretora com taxa baixa.
     corretagem_bps: float = 0.0
 
-    # Emolumentos + liquidacao da B3, por ponta.
     emolumentos_bps: float = 3.25
 
     # Aluguel (BTC), so na perna vendida. Sao cenarios, nao taxas historicas:
@@ -236,7 +215,6 @@ class CustosConfig:
 
     dias_uteis_ano: int = 252
 
-    # IR entra como aproximacao ilustrativa, fora do resultado principal.
     ir_aliquota_ilustrativa: float = 0.15
     ir_incluir_no_principal: bool = False
 
@@ -257,7 +235,6 @@ class MetricasConfig:
     bootstrap_bloco_dias: int = 10
     bootstrap_alpha: float = 0.05
 
-    # Newey-West entra como robustez, nao como numero principal.
     hac_maxlags: int = 10
 
 
@@ -307,12 +284,9 @@ class DadosConfig:
 
     sufixo_yfinance: str = ".SA"
 
-    # COTAHIST: so mercado a vista, lote padrao.
     cotahist_tipo_mercado: tuple[str, ...] = ("010",)
     cotahist_codbdi: tuple[str, ...] = ("02",)
 
-    # Timebox da tentativa de obter o IBrX historico oficial. Estourou, seguimos
-    # pelo universo dinamico em vez de travar o MVP.
     timebox_ibrx_horas: float = 2.0
 
 

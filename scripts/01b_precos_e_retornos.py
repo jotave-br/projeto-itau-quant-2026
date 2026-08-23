@@ -38,7 +38,6 @@ def main(execucao: Execucao | None = None) -> int:
     log = configurar_log(execucao, "01b_precos")
     T = execucao.tabelas
 
-    # 1. universo observado no COTAHIST
     log.info("Carregando COTAHIST...")
     cot, _ = dados.carregar_periodo(cfg.periodo.inicio, somente_acoes=True)
     tickers = sorted(cot["CODNEG"].unique())
@@ -46,7 +45,6 @@ def main(execucao: Execucao | None = None) -> int:
     ultima = calendario.max().date()
     log.info("%d tickers | %d pregoes | ate %s", len(tickers), len(calendario), ultima)
 
-    # 2. quem esta com continuidade bloqueada
     bloqueados: set[str] = set()
     if MAPA.exists():
         mp = pd.read_csv(MAPA, dtype=str).fillna("")
@@ -55,14 +53,13 @@ def main(execucao: Execucao | None = None) -> int:
         log.info("Continuidade bloqueada (revisao pendente): %d tickers",
                  len(bloqueados & set(tickers)))
 
-    # 3. download em lotes
     log.info("Baixando precos ajustados (lotes de %d, ate %d tentativas)...",
              dados.YF_TAMANHO_LOTE, dados.YF_MAX_TENTATIVAS)
     status = dados.baixar_yfinance_lote(
         tickers, cfg.periodo.inicio, ultima, log=log)
 
-    # 4. estados finais, um por ticker. A etapa so termina quando todo ticker
-    # tem estado documentado, e nao quando a chamada retorna.
+    # A etapa so termina quando todo ticker tem estado documentado, e nao quando
+    # a chamada retorna.
     series = dados.carregar_series_yf(tickers)
     trocas = pd.DataFrame()
     caminho_trocas = sorted(RAIZ.glob(
@@ -105,7 +102,6 @@ def main(execucao: Execucao | None = None) -> int:
     status[status["estado_final"].isin(["serie_vazia", "erro_persistente"])].to_csv(
         T / "series_vazias_ou_com_falha.csv", index=False, encoding="utf-8")
 
-    # 5. paineis
     log.info("Montando paineis (%d series em cache)...", len(series))
     precos = retornos.painel_precos_ajustados(series, calendario)
     volume = retornos.painel_volume_financeiro(cot).reindex(index=calendario)
@@ -120,8 +116,8 @@ def main(execucao: Execucao | None = None) -> int:
     precos.to_parquet(RAIZ / "data" / "processed" / "precos_ajustados.parquet")
     ret_util.to_parquet(RAIZ / "data" / "processed" / "retornos_diarios.parquet")
 
-    # 6. cobertura, medida sobre todos os tickers e nao so sobre os que voltaram
-    # com dado. Sem o reindex, quem nao tem serie nem vira coluna do painel, a
+    # A cobertura inclui todos os tickers, nao so os que retornaram dados. Sem o
+    # reindex, quem nao tem serie nem vira coluna do painel, a
     # categoria "ausente" nunca dispara e a tabela fica otima por omitir
     # justamente os casos ruins.
     precos_todos = precos.reindex(columns=tickers)
@@ -134,13 +130,11 @@ def main(execucao: Execucao | None = None) -> int:
     for s, n in cob["situacao_cobertura"].value_counts().items():
         log.info("  %-32s %d", s, n)
 
-    # 7. duplicadas / migradas
     log.info("Procurando series duplicadas ou migradas...")
     dup = retornos.detectar_series_duplicadas(ret_util)
     dup.to_csv(T / "series_duplicadas_ou_migradas.csv", index=False, encoding="utf-8")
     log.info("  %d par(es) suspeito(s) de duplicidade", len(dup))
 
-    # 8. cobertura por decil de liquidez
     liq = cot.groupby("CODNEG")["VOLTOT"].median()
     c2 = cob.join(liq.rename("voltot_mediano"))
     c2 = c2[c2["voltot_mediano"].notna()]
@@ -158,7 +152,6 @@ def main(execucao: Execucao | None = None) -> int:
     log.info("--- cobertura por decil de liquidez ---")
     log.info("\n%s", por_decil.to_string())
 
-    # 9. cobertura por faixa do universo point-in-time
     log.info("Cobertura por faixa em cada janela...")
     janelas = backtest.janelas_do_periodo(cot, cfg.periodo, cfg.walk_forward)
     linhas = []
@@ -192,7 +185,6 @@ def main(execucao: Execucao | None = None) -> int:
         log.info("--- janelas com menor cobertura ---")
         log.info("\n%s", piores.to_string(index=False))
 
-    # 10. manifesto
     gravar_manifesto(execucao, cfg.to_dict(), status="concluida", extras={
         "tickers": len(tickers),
         "estados": status["estado_final"].value_counts().to_dict(),

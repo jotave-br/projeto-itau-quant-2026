@@ -1,17 +1,7 @@
-# ---------------------------------------------------------------------------
-# .gitignore do projeto V1 lead-lag B3
-#
-# Este repositorio e publico. As regras abaixo existem por tres motivos:
-#   1. Tamanho: os arquivos COTAHIST da B3 tem centenas de MB por ano.
-#   2. Licenca: dados de mercado da B3 sao de download publico, mas
-#      redistribui-los em massa num repositorio publico e uma area cinzenta.
-#      Por seguranca, nenhum dado bruto da B3 entra no versionamento.
-#   3. Reprodutibilidade: o projeto deve ser reproduzivel BAIXANDO os dados,
-#      nao copiando-os. Se o pipeline so roda com o cache commitado, ele nao
-#      e reproduzivel de verdade.
-# ---------------------------------------------------------------------------
+# Dados brutos e resultados reproduzíveis permanecem fora do repositório.
+# As tabelas pequenas e curadas em data/reference são versionadas.
 
-# --- Ambiente Python ---
+# Ambiente Python
 .venv/
 venv/
 env/
@@ -21,34 +11,32 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 
-# --- Dados (baixados pelo pipeline, nunca versionados) ---
+# Dados baixados pelo pipeline
 data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 
-# As tabelas de referencia SAO versionadas de proposito: sao pequenas,
-# curadas a mao, e fazem parte da metodologia (setor, emissor, instrumentos).
-# Por isso data/reference/ NAO aparece aqui.
-
-# --- Resultados de execucao ---
-# Cada rodada gera uma pasta nova em outputs/runs/. Nao versionamos por
-# padrao (volume + ruido no historico). A pasta da execucao final usada no
-# relatorio pode ser adicionada a mao com `git add -f`.
+# Resultados de execução
+# Uma execução final pode ser adicionada explicitamente com `git add -f`.
 outputs/runs/*
 !outputs/runs/.gitkeep
+
+# Relatórios, figuras e arquivos temporários gerados localmente
+/output/
+/tmp/
 
 # Fichas locais da validação humana da V2
 outputs/validacao_humana/*
 !outputs/validacao_humana/.gitkeep
 
-# --- Segredos (nao deveria existir nenhum neste projeto, mas por garantia) ---
+# Segredos locais
 .env
 *.key
 *.pem
 credentials.json
 
-# --- Ferramentas e SO ---
+# Ferramentas e sistema operacional
 .vscode/
 .idea/
 Thumbs.db

@@ -33,12 +33,10 @@ def main(execucao: Execucao | None = None) -> int:
     execucao = execucao or criar_execucao("etapa1")
     log = configurar_log(execucao, "01_dados")
 
-    # 1. carregar o periodo
     log.info("Carregando COTAHIST de %s ate hoje", cfg.periodo.inicio)
     bruto, relatorios = dados.carregar_periodo(cfg.periodo.inicio, somente_acoes=False)
     log.info("Registros brutos: %s", f"{len(bruto):,}")
 
-    # 2. tabelas de frequencia
     pool = bruto[
         bruto["TPMERC"].isin(cfg.dados.cotahist_tipo_mercado)
         & bruto["CODBDI"].isin(cfg.dados.cotahist_codbdi)
@@ -48,7 +46,6 @@ def main(execucao: Execucao | None = None) -> int:
         tabela.to_csv(destino, encoding="utf-8")
         log.info("Frequencias de %-11s -> %d categorias", nome, len(tabela))
 
-    # 3. filtrar o universo candidato
     acoes = dados.filtrar_acoes_a_vista(bruto)
     log.info(
         "Filtro de instrumento: %s tickers no pool -> %s acoes (%s removidos)",
@@ -68,7 +65,6 @@ def main(execucao: Execucao | None = None) -> int:
             encoding="utf-8",
         )
 
-    # 4. calendario
     calendario = qualidade_dados.calendario_pregoes(acoes)
     log.info(
         "Calendario derivado dos dados: %s pregoes, de %s a %s",
@@ -79,7 +75,6 @@ def main(execucao: Execucao | None = None) -> int:
         execucao.tabelas / "calendario_pregoes.csv", index=False, encoding="utf-8"
     )
 
-    # 5. auditoria por ticker
     log.info("Auditando %s tickers...", f"{acoes['CODNEG'].nunique():,}")
     aud = qualidade_dados.auditar_tickers(
         acoes, calendario, cfg.nao_sincronia, cfg.liquidez
@@ -91,7 +86,6 @@ def main(execucao: Execucao | None = None) -> int:
         log.info("  %-28s %s", chave, f"{valor:,.4f}" if isinstance(valor, float)
                  else f"{valor:,}")
 
-    # 5b. ranking point-in-time por janela
     janelas = backtest.janelas_do_periodo(acoes, cfg.periodo, cfg.walk_forward)
     log.info("Janelas de walk-forward: %d (treino %dm / teste %dm), de %s a %s",
              len(janelas), cfg.walk_forward.treino_meses,
@@ -103,7 +97,6 @@ def main(execucao: Execucao | None = None) -> int:
     log.info("Tickers que entraram no top-100 em alguma janela: %d",
              int((melhor_pos["melhor_posicao"] <= 100).sum()))
 
-    # 5c. candidatos a mudanca de ticker
     trocas = qualidade_dados.candidatos_mudanca_ticker(acoes)
     log.info("Candidatos a mudanca de ticker (brutos): %d", len(trocas))
     if len(trocas):
@@ -115,9 +108,9 @@ def main(execucao: Execucao | None = None) -> int:
     )
     log.info("Candidatos materialmente relevantes para revisao: %d", len(revisao))
 
-    # 5d. validacao numerica contra o COTAHIST. O yfinance emenda tickers
-    # renomeados por conta propria, e como o COTAHIST e o registro oficial da
-    # bolsa da para auditar a emenda: no periodo do codigo antigo, o preco
+    # O yfinance emenda tickers renomeados por conta propria. Como o COTAHIST e
+    # o registro oficial da bolsa, da para auditar a emenda: no periodo do
+    # codigo antigo, o preco
     # reportado sob o codigo novo deveria reproduzir o registro da B3. Daqui sai
     # evidencia e prioridade, nao autorizacao de continuidade.
     if len(revisao):
@@ -177,7 +170,6 @@ def main(execucao: Execucao | None = None) -> int:
                      r["melhor_posicao_antigo"], r["melhor_posicao_novo"],
                      r["criterio_relevancia"])
 
-    # 6. validacoes por ano
     pd.DataFrame([
         {
             "ano": r["ano"],

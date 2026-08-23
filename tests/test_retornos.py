@@ -197,10 +197,6 @@ def test_series_de_tickers_diferentes_nao_sao_emendadas():
     assert painel["NOV3"].iloc[:3].isna().all()
 
 
-# retorno a partir do preco bruto do COTAHIST
-#
-# O que precisa ficar provado: entre eventos o retorno bruto e igual ao
-# ajustado, e o dia do evento e descartado em vez de corrigido.
 def _cotahist(precos, especi, volume=None, ticker="XPTO3"):
     """Painel COTAHIST minimo, no formato que o modulo espera."""
     idx = cal(len(precos))
@@ -380,9 +376,7 @@ def test_auditoria_de_extremos_nao_altera_o_painel():
     pd.testing.assert_frame_equal(r, antes)
 
 
-# validacao da fronteira por token
-#
-# A tabela classifica a forca da prova, nao autoriza mexer na mascara. Token
+# A tabela classifica a força da prova, não autoriza alterar a máscara. Token
 # com prova fraca segue mascarado; abrir excecao olhando o resultado seria
 # ajustar a regra ao que ela produziu.
 def _painel_com_evento(n_tickers, token="ED", precos=(100.0, 95.0, 96.0, 97.0)):
@@ -578,12 +572,10 @@ def test_corte_de_amostra_minima_e_parametro_e_nao_conclusao():
         cot, idx, ref, vol, min_fronteiras_com_referencia=10)
     assert frouxo.iloc[0]["classificacao_evidencia"] == retornos.EVID_SUSTENTADA
 
-    # A reclassificacao barata tem que concordar com o recalculo completo.
     assert list(retornos.reclassificar_evidencia(v, min_fronteiras=10)) == \
         list(frouxo["classificacao_evidencia"])
 
 
-# retorno de P&L
 def test_pnl_mantem_o_dia_ex_que_a_estimacao_remove():
     """
     A estimacao descarta o degrau do dia ex; o painel de P&L o mantem como

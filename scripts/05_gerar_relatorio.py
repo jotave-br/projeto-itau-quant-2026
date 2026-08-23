@@ -111,7 +111,6 @@ def main(execucao: Execucao | None = None) -> int:
 
     bench = _benchmark(log)
 
-    # metricas por carteira
     linhas = []
     for carteira in CARTEIRAS:
         arq = T4 / f"pnl_{carteira}.csv"
@@ -147,7 +146,6 @@ def main(execucao: Execucao | None = None) -> int:
                  "boot p %.3f", r["carteira"], 100 * r["retorno_total"],
                  r["sharpe"], 100 * r["max_drawdown"], r["boot_p_unilateral"])
 
-    # CAR no nivel do sinal
     eventos_arq = T4 / "eventos_top_k_long_short.csv"
     if bench is not None and eventos_arq.exists():
         from src import dados, qualidade_dados, retornos as mod_ret
@@ -171,7 +169,6 @@ def main(execucao: Execucao | None = None) -> int:
                  len(eventos), eventos["car_na_direcao"].median(),
                  eventos["car_na_direcao"].mean())
 
-    # figuras
     rede3 = pd.read_csv(T3 / "rede_por_janela.csv")
     fdr_resumo = pd.read_csv(T3 / "fdr_resumo_por_faixa.csv")
     invertida = pd.read_csv(T3 / "direcao_invertida.csv")

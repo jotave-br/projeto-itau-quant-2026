@@ -48,7 +48,6 @@ def _periodos(*pares):
         [{"ticker_observado": t, "inicio": i, "fim": f} for t, i, f in pares])
 
 
-# schema e validacao
 def test_tabela_bem_formada_passa():
     assert setores.validar(_tabela()) == []
 
@@ -173,7 +172,6 @@ def test_data_ilegivel_reprova():
     assert setores.validar(_tabela(_linha(data_fonte="ontem")))
 
 
-# consulta dependente de data
 def test_setor_vigente_ignora_linha_pendente():
     """
     Linha pendente registra o que falta pesquisar. Devolve-la seria usar um
@@ -224,7 +222,6 @@ def test_sucessor_nao_herda_setor_do_antecessor():
     assert "YDUQ3" not in setores.tickers_operaveis_em(t, "2020-01-02")
 
 
-# lacunas
 def test_lacuna_distingue_sem_linha_de_sem_confirmacao():
     t = _tabela(_linha("AAAA3", validade_inicio="2015-01-01"),
                 _linha("BBBB3", emissor_id="BBBB", status_revisao="pendente"))
@@ -266,7 +263,6 @@ def test_periodo_totalmente_coberto_nao_gera_lacuna():
     assert setores.lacunas(t, _periodos(("XPTO3", "2015-01-01", "2026-01-01"))).empty
 
 
-# identidade do emissor
 def test_emissor_sai_do_isin_bem_formado():
     assert setores.emissor_do_isin("BRPETRACNPR6") == "PETR"
     assert setores.emissor_do_isin("BRVALEACNOR0") == "VALE"
@@ -294,8 +290,6 @@ def test_auditoria_detecta_isin_invalido_e_colisao_de_emissor():
     assert "AAAA3" not in alertas
 
 
-# classes simultaneas x mudanca historica de setor
-#
 # A regra so vale durante sobreposicao. Comparar por emissor sem olhar periodo
 # proibiria a mudanca historica que a validade temporal existe para permitir.
 def test_classes_simultaneas_com_mesma_classificacao_passam():

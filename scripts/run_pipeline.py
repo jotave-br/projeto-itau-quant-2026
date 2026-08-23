@@ -27,7 +27,6 @@ sys.path.insert(0, str(_AQUI))  # scripts/, para importar as etapas
 from src.config import CONFIG_PADRAO  # noqa: E402
 from src.execucao import configurar_log, criar_execucao, gravar_manifesto  # noqa: E402
 
-# Ordem do metodo. Cada entrada e (rotulo, modulo, e_auditoria_yf).
 ETAPAS = [
     ("Download, cache e auditoria dos dados", "01_baixar_e_auditar_dados", False),
     ("Precos, retornos e validacao de fontes", "01b_precos_e_retornos", True),

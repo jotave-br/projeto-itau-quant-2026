@@ -1,31 +1,24 @@
-# Formato Citation File Format (CFF). O GitHub le este arquivo e mostra um
-# botao "Cite this repository" no topo da pagina, que gera a citacao pronta em
-# BibTeX e APA. E o mecanismo correto para credito academico - a licenca MIT
-# governa o reuso do codigo, este arquivo governa a citacao do trabalho.
-
 cff-version: 1.2.0
 message: "Se você usar este trabalho, por favor cite-o conforme abaixo."
 type: software
 
-title: "Rede lead-lag na B3: difusão de informação ou preço velho?"
+title: "Mímir: lead-lag setorial na B3"
 
 abstract: >-
-  Pesquisa quantitativa sobre difusão de informação na bolsa brasileira (B3).
-  Testa se ações mais líquidas antecipam ações menos líquidas do mesmo setor e,
-  principalmente, se o efeito medido é difusão de informação real ou artefato
-  de negociação não-síncrona (preço velho de papel pouco negociado). Inclui
-  estratificação por liquidez, testes placebo, correção de múltiplas
-  comparações por Benjamini-Hochberg, validação walk-forward point-in-time e
-  contabilização de custos de transação incluindo aluguel da ponta vendida.
+  Pesquisa quantitativa sobre lead-lag setorial na bolsa brasileira. A V1
+  reconstrói universos point-in-time por liquidez e testa 38 redes trimestrais
+  fora da amostra, com controles de não sincronia, placebos, correção de
+  múltiplas comparações e custos de negociação. A V2 condiciona a rede a Fatos
+  Relevantes da CVM classificados por um modelo local. O estudo encontra
+  associação contemporânea, mas não identifica atraso persistente ou retorno
+  negociável com o desenho e os dados utilizados.
 
 authors:
   - given-names: "João Vitor"
     family-names: "Battigaglia Fernandes"
-  - given-names: "Fabio Luiz"
-    family-names: "Gonçalves Filho"
 
-version: "0.1.0"
-date-released: 2026-07-28
+version: "1.0.0"
+date-released: 2026-08-15
 
 keywords:
   - lead-lag
@@ -36,5 +29,6 @@ keywords:
   - finanças quantitativas
   - walk-forward
   - microestrutura de mercado
+  - processamento de linguagem natural
 
 license: MIT

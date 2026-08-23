@@ -16,8 +16,6 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 
-# Paleta de referência, slots 1 e 2 na ordem fixa. Não inventar cor: a ordem é
-# o mecanismo de segurança para daltonismo, não escolha estética.
 AZUL = "#2a78d6"
 LARANJA = "#eb6834"
 SUPERFICIE = "#fcfcfb"
@@ -96,7 +94,6 @@ def fig_matriz_confusao(matriz: pd.DataFrame, caminho):
     ax.set_xlabel("classificação da IA", fontsize=10, color=TINTA_2, labelpad=10)
     ax.set_ylabel("gold do painel", fontsize=10, color=TINTA_2, labelpad=10)
 
-    # Gap de 2px entre células, no tom da superfície.
     ax.set_xticks(np.arange(-0.5, len(ordem), 1), minor=True)
     ax.set_yticks(np.arange(-0.5, len(ordem), 1), minor=True)
     ax.grid(which="minor", color=SUPERFICIE, linewidth=2.5)
@@ -122,8 +119,8 @@ def fig_matriz_confusao(matriz: pd.DataFrame, caminho):
 
     _titulo(
         ax,
-        "A IA acha tudo que existe — e inventa o resto",
-        "Recall de 100% nas duas direções; todo o erro está na linha neutra",
+        "A amostra auditada revela excesso de sinais direcionais",
+        "Dos 56 neutros no gold, 26 viraram direcionais; foram 31 erros no total",
     )
     return _salvar(fig, caminho)
 
@@ -153,8 +150,8 @@ def fig_escada_conservadorismo(contagens: pd.Series, destaque: str, caminho):
     ax.set_xlim(0, float(serie.max()) * 1.16)
     _titulo(
         ax,
-        "O classificador local dispara o dobro do painel",
-        "Mesmos 90 documentos, mesmas regras, avaliadores independentes",
+        "O classificador local atribui mais direções que o painel",
+        "Mesmos 90 documentos e protocolo; as avaliações por LLM não são independentes",
     )
     return _salvar(fig, caminho)
 
@@ -171,7 +168,7 @@ def fig_curvas_bracos(series: dict[str, pd.Series], principal: str,
                 color=MUDO, alpha=0.55, zorder=1)
 
     estilos = {principal: (AZUL, "IA + rede (sinal real)"),
-               placebo: (LARANJA, "direções embaralhadas (placebo)")}
+               placebo: (LARANJA, "seguidora aleatória (placebo)")}
     for nome, (cor, rotulo) in estilos.items():
         acumulado = series[nome].cumsum() * 100
         ax.plot(acumulado.index, acumulado.to_numpy(), linewidth=2.0, color=cor,
@@ -196,15 +193,17 @@ def fig_curvas_bracos(series: dict[str, pd.Series], principal: str,
     ax.margins(x=0.06)
     _titulo(
         ax,
-        "O placebo terminou acima do sinal real",
-        "Linhas cinza: IA sem rede e seguidora aleatória. H=3, líquido de custos",
+        "O sinal principal não se separa da seguidora aleatória",
+        "Mesmos eventos; linha cinza: IA sem rede. H=3, líquido de custos",
     )
     return _salvar(fig, caminho)
 
 
 def fig_intervalos(resumo: pd.DataFrame, caminho, rotulos: dict[str, str]):
     """Estimativa e intervalo por braço: mostra largura, não só o ponto."""
-    base = resumo[resumo["h"].eq(3)].copy()
+    base = resumo[
+        resumo["h"].eq(3) & ~resumo["braco"].eq("rede_sem_ia")
+    ].copy()
     base["rotulo"] = base["braco"].map(rotulos).fillna(base["braco"])
     base = base.iloc[::-1]
     fig, ax = _base(9.0, 4.6)
@@ -232,10 +231,18 @@ def fig_intervalos(resumo: pd.DataFrame, caminho, rotulos: dict[str, str]):
     ax.spines["left"].set_visible(False)
     ax.tick_params(length=0)
     ax.set_ylim(-0.9, len(base) - 0.4)
+    p_randomizacao = resumo.loc[
+        resumo["braco"].eq("ia_mais_rede") & resumo["h"].eq(3),
+        "p_randomizacao_seguidora",
+    ].dropna()
+    p_texto = (
+        f"p={float(p_randomizacao.iloc[0]):.3f}".replace(".", ",")
+        if not p_randomizacao.empty
+        else "p não disponível"
+    )
     _titulo(
         ax,
-        "Intervalos largos demais para decidir",
-        "73 sinais em nove anos. 'IA sem rede' exclui zero por 6×10⁻⁷ — um entre "
-        "seis testes, sem correção de multiplicidade",
+        "O efeito combinado de IA e rede não se separa de zero",
+        f"99 operações; 500 redes aleatórias, {p_texto}. IA sem rede é negativa",
     )
     return _salvar(fig, caminho)

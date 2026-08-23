@@ -28,7 +28,7 @@ CLASSIFICADOR = "Qwen3 14B local"
 ROTULOS_BRACOS = {
     "ia_mais_rede": "IA + rede",
     "ia_sem_rede": "IA sem rede",
-    "rede_sem_ia": "rede sem IA (placebo)",
+    "rede_sem_ia": "rede sem IA (sinal diário)",
     "seguidora_aleatoria": "seguidora aleatória",
 }
 
@@ -76,8 +76,10 @@ def main(argv: list[str] | None = None) -> int:
             caminho=destino / "v2_02_escada_conservadorismo.png",
         )
 
+        # A rede sem IA dispara diariamente e, portanto, tem escala e número de
+        # operações incomparáveis aos três braços condicionados aos eventos.
         series = {}
-        for braco in ROTULOS_BRACOS:
+        for braco in ("ia_mais_rede", "ia_sem_rede", "seguidora_aleatoria"):
             caminho = args.backtest_run / f"pnl_diario_{braco}.csv"
             tabela = pd.read_csv(caminho, index_col=0, parse_dates=[0],
                                  encoding="utf-8-sig")
@@ -85,7 +87,7 @@ def main(argv: list[str] | None = None) -> int:
         graficos_v2.fig_curvas_bracos(
             series,
             principal="ia_mais_rede",
-            placebo="rede_sem_ia",
+            placebo="seguidora_aleatoria",
             caminho=destino / "v2_03_curvas_bracos.png",
         )
 

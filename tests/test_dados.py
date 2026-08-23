@@ -33,7 +33,6 @@ def painel(*linhas):
     return pd.DataFrame(list(linhas))
 
 
-# Classificacao do instrumento
 @pytest.mark.parametrize("especi,esperado", [
     ("ON      NM", "ON"),      # ordinaria, Novo Mercado
     ("ON  ED  NM", "ON"),      # mesma acao no dia ex-dividendo
@@ -67,7 +66,6 @@ def test_normalizacao_nao_colide_tipos_distintos():
     observados = ["ON", "PN", "PNA", "PNB", "PNC", "PND", "PNE", "PNF", "UNT",
                   "DRN", "DR1", "DR2", "DR3", "DRE", "CI", "IBO", "IBO/", "SML)"]
     norm = dados.tipo_instrumento(pd.Series(observados))
-    # IBO e IBO/ sao a mesma coisa e devem colidir; o resto nao.
     assert norm.tolist().count("IBO") == 2
     sem_ibo = [t for t in norm.tolist() if t != "IBO"]
     assert len(sem_ibo) == len(set(sem_ibo))
@@ -174,7 +172,6 @@ def test_mercado_a_termo_e_opcoes_ficam_de_fora():
     assert set(out["CODNEG"]) == {"PETR4"}
 
 
-# Validacao do arquivo
 def test_duplicata_no_pool_a_vista_levanta_erro():
     """
     Duas linhas para o mesmo (data, ticker) no mercado a vista deixariam o
@@ -197,7 +194,6 @@ def test_voltot_negativo_levanta_erro():
         dados.validar_dataframe(df)
 
 
-# Pendentes
 def test_retornos_usam_preco_ajustado():
     """
     Retorno calculado sobre preco nao ajustado registraria a queda do dia do

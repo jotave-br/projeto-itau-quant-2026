@@ -74,7 +74,6 @@ def main(execucao: Execucao | None = None) -> int:
             return 1
         log.info("Conferindo: %s", {k: v.name for k, v in runs.items()})
 
-    # etapa 4: invariantes do dinheiro
     T4 = runs["etapa4"] / "tabelas"
     tol = 1e-9
     for carteira in CARTEIRAS:
@@ -116,7 +115,6 @@ def main(execucao: Execucao | None = None) -> int:
         checar(bool((sel["lider"] != sel["seguidora"]).all()),
                f"selecao {regra}: pontas distintas")
 
-    # etapa 3: coerencia da inferencia
     T3 = runs["etapa3"] / "tabelas"
     fdr = pd.read_csv(T3 / "fdr_resumo_por_faixa.csv")
     checar(bool((fdr["aprovados_fdr"] <= fdr["hipoteses_testadas"]).all()),

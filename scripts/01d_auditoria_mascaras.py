@@ -73,7 +73,6 @@ def main(execucao: Execucao | None = None) -> int:
     tickers = sorted(cot["CODNEG"].unique())
     volume = retornos.painel_volume_financeiro(cot).reindex(index=calendario)
 
-    # 1. os tres denominadores
     precos = (cot.pivot_table(index="DATA", columns="CODNEG", values="PREULT",
                               aggfunc="last")
               .reindex(calendario))
@@ -102,7 +101,6 @@ def main(execucao: Execucao | None = None) -> int:
     pd.Series(denominadores).to_csv(T / "mascara_denominadores.csv",
                                     header=["valor"], encoding="utf-8")
 
-    # 2. por ticker
     por_ticker = pd.DataFrame({
         "candidatos": candidatos.sum(),
         "removidos": removido.sum(),
@@ -119,7 +117,6 @@ def main(execucao: Execucao | None = None) -> int:
              por_ticker["frac_removida"].max())
     log.info("  10 mais afetados:\n%s", por_ticker.head(10).round(4).to_string())
 
-    # 3. por janela e por faixa
     janelas = backtest.janelas_do_periodo(cot, cfg.periodo, cfg.walk_forward)
     log.info("Auditando %d janelas de walk-forward...", len(janelas))
 
@@ -180,9 +177,8 @@ def main(execucao: Execucao | None = None) -> int:
     log.info("--- 5 janelas com maior remocao ---\n%s",
              por_janela.nlargest(5, "frac_removida").round(4).to_string())
 
-    # 4. suporte comum entre as fontes. A comparacao yfinance x COTAHIST so vale
-    # onde as duas tem retorno; fora disso a diferenca seria de amostra, e nao
-    # de fonte.
+    # A comparacao yfinance x COTAHIST usa apenas o suporte comum; fora dele, a
+    # diferenca seria de amostra, e nao de fonte.
     comuns = [t for t in ret_cot.columns if t in ret_yf.columns]
     ambos = ret_cot[comuns].notna() & ret_yf[comuns].notna()
     suporte = pd.DataFrame({
@@ -200,7 +196,6 @@ def main(execucao: Execucao | None = None) -> int:
              f"{int(suporte['obs_yfinance'].sum()):,}",
              f"{int(suporte['obs_suporte_comum'].sum()):,}")
 
-    # 5. que evidencia existe por token de evento
     log.info("Validando a fronteira por token...")
     val = retornos.validar_fronteiras_por_token(cot, calendario, ret_yf, volume)
     val.to_csv(T / "validacao_fronteira_por_token.csv", index=False, encoding="utf-8")
@@ -234,7 +229,6 @@ def main(execucao: Execucao | None = None) -> int:
     log.info("A referencia so existe onde o yfinance tem serie: nada aqui vale "
              "para quem saiu da bolsa.")
 
-    # 6. triagem dos retornos extremos
     candidatos_mudanca = pd.DataFrame()
     caminho_cand = _ultimo("outputs/runs/*_etapa1/tabelas/candidatos_mudanca_ticker.csv")
     if caminho_cand is not None:
@@ -304,7 +298,6 @@ def main(execucao: Execucao | None = None) -> int:
              "de grupamento, nao confirmacao. Nada foi winsorizado nem "
              "corrigido.")
 
-    # 7. dimensoes que esta etapa nao separa
     pendentes = [
         "efeito da mascara por setor/subsetor",
         "efeito da mascara por papel de lider/seguidora",
@@ -315,7 +308,6 @@ def main(execucao: Execucao | None = None) -> int:
     for p in pendentes:
         log.warning("dimensao nao auditada -> %s", p)
 
-    # 8. alertas
     alertas = []
     ruins = aud[aud["frac_removida"] > MAX_FRAC_REMOVIDA]
     if len(ruins):

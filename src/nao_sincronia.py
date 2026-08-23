@@ -177,7 +177,6 @@ def rodar_placebos(
         "beta_real_medio": beta_real_medio,
         "placebo_mediana_p50": float(medianas.median()) if len(medianas) else float("nan"),
         "placebo_mediana_p95": float(medianas.quantile(0.95)) if len(medianas) else float("nan"),
-        # frequencia de medianas placebo iguais ou maiores que a observada
         "p_empirico_mediana": float((medianas >= beta_real_mediano).mean())
         if len(medianas) else float("nan"),
     }

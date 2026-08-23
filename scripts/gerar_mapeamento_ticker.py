@@ -61,7 +61,6 @@ COLUNAS_DIAGNOSTICO = [
     "razao_precos_mediana", "dispersao_razao_precos",
 ]
 
-# Colunas de validacao, copiadas da tabela de revisao a cada execucao.
 COLUNAS_VALIDACAO = [
     "yf_ticker_consultado", "yf_primeira_data", "yf_ultima_data",
     "n_datas_sobrepostas", "n_datas_eventos_excluidas", "corr_retornos",
@@ -151,7 +150,6 @@ def main() -> int:
     sugerida = _union_find(list(zip(df["ticker_antigo"], df["ticker_novo"])))
     df["suggested_corporate_lineage_id"] = df["ticker_antigo"].map(sugerida)
 
-    # Defaults dos campos manuais.
     df["canonical_instrument_id"] = ""
     df["corporate_lineage_id"] = ""      # reconstruida so com arestas aprovadas
     df["tipo_evento"] = ""
@@ -181,7 +179,6 @@ def main() -> int:
     df["needs_revalidation"] = "nao"
     df["diagnostic_hash"] = df.apply(_hash_diagnostico, axis=1)
 
-    # Mescla com o arquivo existente.
     preservadas = revalidar = orfas_mantidas = 0
     if DESTINO.exists():
         antigo = pd.read_csv(DESTINO, dtype=str).fillna("")
@@ -222,7 +219,6 @@ def main() -> int:
 
         df = novo.reset_index()
 
-        # Linha ja decidida que sumiu da deteccao permanece no arquivo.
         decididas = ant[~ant["status"].isin(STATUS_ABERTOS)]
         orfas = decididas.index.difference(novo.index)
         if len(orfas):

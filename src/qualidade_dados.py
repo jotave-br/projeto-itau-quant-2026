@@ -141,7 +141,6 @@ def auditar_tickers(
     flags = marcar_dias_suspeitos(painel, cfg_ns)
     janelas = janela_listagem(painel)
 
-    # Pregoes esperados dentro da janela de vida de cada papel.
     pos_ini = cal.index.searchsorted(janelas["primeira_data"].values, side="left")
     pos_fim = cal.index.searchsorted(janelas["ultima_data"].values, side="right")
     janelas["pregoes_esperados"] = pos_fim - pos_ini
@@ -177,7 +176,6 @@ def auditar_tickers(
     aud["cobertura"] = (aud["pregoes_observados"] / aud["pregoes_esperados"]).where(
         aud["pregoes_esperados"] > 0
     )
-    # Negociacao efetiva desconta tambem os dias com registro e volume zero.
     aud["prop_dias_negociados"] = (
         (aud["pregoes_observados"] - aud["dias_volume_zero"])
         / aud["pregoes_esperados"]
@@ -199,11 +197,8 @@ def auditar_tickers(
         aud["prop_dias_negociados"] >= cfg_liq.proporcao_minima_dias_negociados
     )
 
-    # Serie quebrada, e nao apenas iliquida. Criterio de taxa e nao de maximo: o
-    # maximo absoluto reprovaria PETR4, BBDC4 e ABEV3, que em 2.870 pregoes
-    # fecham tres vezes seguidas no mesmo centavo por coincidencia. A taxa separa
-    # bem - 1,2% no decil mais liquido, 17,2% no menos liquido, 99,4% num papel
-    # inutilizavel.
+    # A taxa, em vez do máximo absoluto, separa séries quebradas de repetições
+    # ocasionais em papéis líquidos.
     aud["elegivel_serie_integra"] = (
         aud["frac_fechamento_repetido"] <= cfg_ns.max_frac_fechamento_repetido
     )
@@ -254,10 +249,8 @@ def candidatos_mudanca_ticker(
 
     linhas = []
 
-    # Precos das pontas, calculados para as duas passadas: na 2 eles filtram, na
-    # 1 so entram no relatorio, porque o nome ja e evidencia forte. Razao de
-    # preco longe de 1 com o mesmo nome indica desdobramento ou conversao de
-    # classe, e nao troca simples de codigo.
+    # Razão de preço distante de 1 com o mesmo nome sugere desdobramento ou
+    # conversão de classe, não uma simples troca de código.
     ordenado_por_data = painel.sort_values("DATA")
     ultimo_preco = ordenado_por_data.groupby("CODNEG")["PREULT"].last()
     primeiro_preco = ordenado_por_data.groupby("CODNEG")["PREULT"].first()
@@ -270,7 +263,6 @@ def candidatos_mudanca_ticker(
                 "preco_novo": round(p_n, 2) if p_n == p_n else None,
                 "salto_preco": round(salto, 4) if salto == salto else None}
 
-    # passada 1: mesmo nome, tickers diferentes (confianca alta)
     vistos = set()
     for nome, grupo in info[info["NOMRES"] != ""].groupby("NOMRES"):
         if len(grupo) < 2:
@@ -293,30 +285,8 @@ def candidatos_mudanca_ticker(
                 **_precos(g.index[i], g.index[i + 1]),
             })
 
-    # passada 2: rebranding, com nome e ticker mudando juntos
-    #
-    # A passada 1 nao ve o caso em que a empresa tambem troca de nome. Caso
-    # real e relevante: Eletrobras (ELET3/ELET6, ate 07/11/2025) vira Axia
-    # Energia (AXIA3/AXIA6, desde 10/11/2025), com ISIN novo. O AXIA3 esta
-    # entre os dez papeis mais liquidos da amostra.
-    #
-    # O discriminante decisivo e a continuidade de preco. Numa troca de
-    # ticker o papel e o mesmo, entao o ultimo fechamento do codigo antigo e o
-    # primeiro do novo praticamente coincidem. Numa adjacencia por acaso - uma
-    # empresa sai da bolsa e outra entra na semana seguinte - os precos nao
-    # tem relacao nenhuma.
-    #
-    # Sem essa condicao a heuristica e inutil: adjacencia temporal sozinha
-    # produz centenas de pares falsos, porque entre 727 papeis sempre ha
-    # alguem saindo quando alguem entra.
-    # Liquidez junto A transicao, e nao mediana do periodo inteiro.
-    #
-    # Usar a mediana de 12 anos foi um erro que quase custou o caso principal:
-    # a Eletrobras de 2015 negociava muito menos que a Axia de 2026, entao a
-    # razao de liquidez do par correto (ELET3 -> AXIA3) estourava o limite e
-    # ele era descartado, enquanto o par errado (ELET3 -> AXIA6, ON contra
-    # PNB) passava por acaso. O que indica continuidade e a liquidez nos
-    # pregoes vizinhos ao evento, nao a media historica das duas pontas.
+    # Rebrandings exigem continuidade de preço e liquidez próxima à transição.
+    # Adjacência temporal ou liquidez histórica isoladas geram falsos pares.
     ultimos = (painel.sort_values("DATA").groupby("CODNEG")
                .tail(janela_liquidez).groupby("CODNEG")["VOLTOT"].median())
     primeiros = (painel.sort_values("DATA").groupby("CODNEG")
@@ -426,7 +396,6 @@ def metricas_validacao_yf(
         m["_situacao"] = "sem_cotahist"
         return m
 
-    # Janela: o periodo em que a empresa negociou sob o codigo antigo.
     ini, fim = cot.index.min(), cot.index.max()
     j = pd.DataFrame({
         "yf_close": yf.loc[(yf.index >= ini) & (yf.index <= fim), "Close"],
@@ -442,13 +411,11 @@ def metricas_validacao_yf(
         m["_situacao"] = "inconclusivo_pouca_amostra"
         return m
 
-    # teste 1: preco bruto
     razao = j["yf_close"] / j["cot_preult"]
     mediana = float(razao.median())
     m["razao_precos_mediana"] = round(mediana, 6)
     m["dispersao_razao_precos"] = round(float(razao.std() / mediana), 6) if mediana else None
 
-    # teste 2: retornos, com exclusoes
     r_yf = j["yf_close"].pct_change()
     r_cot = j["cot_preult"].pct_change()
 
@@ -457,7 +424,6 @@ def metricas_validacao_yf(
     evento = evento | evento.shift(1, fill_value=False)
     sem_negocio = (j["cot_voltot"].fillna(0) <= 0) | (j["cot_totneg"].fillna(0) <= 0)
     sem_negocio = sem_negocio | sem_negocio.shift(1, fill_value=False)
-    # As bordas da janela sao onde a emenda acontece.
     transicao = pd.Series(False, index=j.index)
     transicao.iloc[:folga_transicao] = True
     transicao.iloc[-folga_transicao:] = True
@@ -479,24 +445,8 @@ def metricas_validacao_yf(
     return m
 
 
-# Limiares calibrados na distribuicao observada, e nao escolhidos a priori. As
-# referencias foram classificadas por conhecimento societario publico, nunca
-# pelos numeros que estao sendo calibrados - seria circular:
-#
-#   positivos, 11 renomeacoes    erro_ret_mediano <= 8e-08
-#   (ESTC3->YDUQ3, EMBR3->EMBJ3, corr             >= 0.9827
-#    CCRO3->MOTV3, KROT3->COGN3, p95              <= 0.0094
-#    BVMF3->B3SA3, ELET3->AXIA3, dispersao        <= 0.0151
-#    BTOW3->AMER3, BRDT3->VBBR3,
-#    DTEX3->DXCO3, TIMP3->TIMS3,
-#    ARZZ3->AZZA3)
-#
-#   negativos que de fato divergem  erro_ret_mediano >= 0.0148
-#   (BRFS3->MBRF3 fusao,            corr             <= 0.4422 ou indefinida
-#    SUZB5->SUZB3 conversao)        p95              >= 0.0529
-#
-# O erro mediano de retorno separa os dois grupos por cinco ordens de grandeza,
-# e os limiares ficam folgadamente no meio do vao.
+# Os controles foram classificados por evidência societária antes da calibração
+# numérica; detalhes em data/reference/calibracao_validacao_yf.md.
 CALIBRACAO_VERSAO = "1.0.0"   # ver data/reference/calibracao_validacao_yf.md
 
 LIMIAR_ERRO_RETORNO_MEDIANO = 1e-05
@@ -507,7 +457,6 @@ LIMIAR_CORR_RETORNOS = 0.95
 # dos controles positivos (0,0151).
 LIMIAR_DISPERSAO_DEGRAU = 0.05
 
-# Controles da calibracao, registrados para auditoria.
 CONTROLES_POSITIVOS = (
     ("ESTC3", "YDUQ3"), ("EMBR3", "EMBJ3"), ("CCRO3", "MOTV3"),
     ("TIMP3", "TIMS3"), ("ARZZ3", "AZZA3"), ("KROT3", "COGN3"),
@@ -711,8 +660,6 @@ def tabela_revisao_mudanca_ticker(
 
         relevante_a = min(pos_ant, pos_nov) <= top_universo
         relevante_b = min(pos_ant, pos_nov) <= top_margem
-        # criterio (c): ponta curta demais para ser rankeada, com a outra
-        # relevante
         curto_ant = preg_ant < pregoes_curto and pos_nov <= top_margem
         curto_nov = preg_nov < pregoes_curto and pos_ant <= top_margem
         if not (relevante_a or relevante_b or curto_ant or curto_nov):
@@ -764,7 +711,6 @@ def tabela_revisao_mudanca_ticker(
             "criterio_relevancia": "+".join(criterios),
             "metodo_deteccao": c["motivo"],
             "confianca_deteccao": c["confianca"],
-            # preenchimento manual, propositalmente em branco
             "tipo_evento": "",
             "proporcao_conversao": "",
             "fonte": "",

@@ -43,7 +43,6 @@ def test_bootstrap_reproduz_com_seed_fixa():
 
     assert a == b
     assert a["ic_inferior"] != outro["ic_inferior"]
-    # sanidade: o IC percentil cobre a media observada
     assert a["ic_inferior"] <= a["media_observada"] <= a["ic_superior"]
 
 
@@ -87,7 +86,6 @@ def test_car_no_nivel_do_sinal():
     """
     idx = pd.bdate_range("2020-01-06", periods=20)
     bench = pd.Series(0.001, index=idx)
-    # a seguidora rende benchmark + 1% ao dia: anormal de 1% por pregao
     ret = pd.DataFrame({"SG00": 0.011}, index=idx)
     eventos = pd.DataFrame({"data": [idx[5]], "ticker": ["SG00"]})
 

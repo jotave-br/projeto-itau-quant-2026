@@ -76,6 +76,7 @@ COLUNAS_PNL_OPERACAO_DIA = [
     "preco_inicio",
     "preco_fim",
     "retorno_ativo",
+    "retorno_incremental_entrada",
     "peso",
     "pnl_abertura_fechamento",
     "pnl_fechamento_fechamento",
@@ -597,7 +598,16 @@ def rodar_backtest_eventos(
                         preco_inicio = float(fechamentos.iloc[passo - 2])
                         tipo = "fechamento_fechamento"
                     retorno = preco_fim / preco_inicio - 1.0
-                    bruto = peso * retorno
+                    # A operacao compra uma quantidade fixa na abertura e so
+                    # gira novamente na saida. Portanto, o P&L de cada sessao
+                    # deve ser medido contra o preco de entrada. Multiplicar o
+                    # peso pelo retorno percentual de cada dia equivaleria a
+                    # um rebalanceamento diario que nao existe (nem pagaria
+                    # custos no modelo).
+                    retorno_incremental_entrada = (
+                        preco_fim - preco_inicio
+                    ) / float(preco_entrada)
+                    bruto = peso * retorno_incremental_entrada
                     parte_open = bruto if passo == 1 else 0.0
                     parte_close = bruto if passo > 1 else 0.0
                     custo_entrada_dia = custo_entrada_total if passo == 1 else 0.0
@@ -619,6 +629,9 @@ def rodar_backtest_eventos(
                             "preco_inicio": preco_inicio,
                             "preco_fim": preco_fim,
                             "retorno_ativo": retorno,
+                            "retorno_incremental_entrada": (
+                                retorno_incremental_entrada
+                            ),
                             "peso": peso,
                             "pnl_abertura_fechamento": parte_open,
                             "pnl_fechamento_fechamento": parte_close,

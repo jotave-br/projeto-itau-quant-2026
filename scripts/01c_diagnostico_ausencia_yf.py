@@ -40,7 +40,6 @@ def main(execucao: Execucao | None = None) -> int:
     log = configurar_log(execucao, "01c_ausencia")
     T = execucao.tabelas
 
-    # 1. entradas
     caminho_status = _ultimo("outputs/runs/*_etapa1b/tabelas/status_tickers_yfinance.csv")
     if caminho_status is None:
         log.error("Nao encontrei status_tickers_yfinance.csv. Rode a etapa 1b antes.")
@@ -61,13 +60,12 @@ def main(execucao: Execucao | None = None) -> int:
     log.info("%d tickers | %d pregoes | ate %s",
              len(tickers), len(calendario), calendario.max().date())
 
-    # 2. materialidade point-in-time: "199 ausentes" nao diz se o estudo foi
-    # afetado, a melhor posicao diz.
+    # A contagem de ausentes nao mede materialidade point-in-time; a melhor
+    # posicao no universo mostra se o estudo foi afetado.
     janelas = backtest.janelas_do_periodo(cot, cfg.periodo, cfg.walk_forward)
     log.info("Calculando melhor posicao PIT em %d janelas...", len(janelas))
     melhor = universo.melhor_posicao_por_ticker(cot, janelas, cfg.liquidez)
 
-    # 3. classificacao
     diag = qualidade_dados.classificar_ausencia_yf(
         cot, status, candidatos=candidatos, melhor_posicao=melhor, cfg=cfg.liquidez)
     diag.to_csv(T / "diagnostico_ausencia_yf.csv", index=False, encoding="utf-8")
@@ -97,7 +95,7 @@ def main(execucao: Execucao | None = None) -> int:
             "ticker", "melhor_posicao_pit", "faixa_alcancada", "ultima_data",
             "causa_provavel", "via_recuperacao", "nome"]].to_string(index=False))
 
-    # 4. quanto a via COTAHIST recuperaria - medicao, nao adocao
+    # Mede o que a via COTAHIST recuperaria, sem autorizar sua adocao.
     log.info("Medindo cobertura por fonte (nenhum painel e gravado)...")
     series = dados.carregar_series_yf(tickers)
     volume = retornos.painel_volume_financeiro(cot).reindex(index=calendario)

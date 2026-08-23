@@ -111,7 +111,6 @@ def test_selecao_fdr_exige_correcao_previa_e_beta_positivo():
 
     corrigida, _ = mt.aplicar_fdr_janela(rede, cfg)
     sel = mt.selecionar_pares(corrigida, "fdr", cfg)
-    # o par de beta negativo passa no BH mas nao vira posicao
     assert list(sel["lider"]) == ["L00"]
 
 

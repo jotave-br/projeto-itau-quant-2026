@@ -471,7 +471,6 @@ def auditar_retornos_extremos(
               .reindex(pd.DatetimeIndex(calendario)))
     token = painel_token_evento(painel_cotahist, calendario)
 
-    # Datas de borda de mudanca de ticker, por codigo envolvido.
     bordas: dict[str, list[pd.Timestamp]] = {}
     if candidatos_mudanca is not None and len(candidatos_mudanca):
         for col_tk, col_dt in (("ticker_antigo", "fim_antigo"),
@@ -666,7 +665,6 @@ def cobertura_yahoo_vs_cotahist(
     d["situacao_cobertura"] = [
         _situacao(tk, c) for tk, c in d["cobertura_yahoo_vs_cotahist"].items()]
     d["ticker_terminal"] = [terminais.get(tk, "") for tk in d.index]
-    # Risco alto: papel com negociacao registrada e pouco ou nenhum preco.
     d["risco_cobertura_fonte"] = np.where(
         d["situacao_cobertura"].isin(["ausente", "erro_temporario"]), "alto",
         np.where(d["situacao_cobertura"] == "cobertura_parcial", "medio", "baixo"))
@@ -718,7 +716,6 @@ def detectar_series_duplicadas(
                 linhas.append({"ticker_a": grupo[i], "ticker_b": grupo[j],
                                "tipo": "fingerprint_identico", "correlacao": 1.0})
 
-    # Quase identicas: correlacao altissima com sobreposicao suficiente.
     validos = painel_retornos.loc[:, painel_retornos.notna().sum() >= min_sobreposicao]
     if validos.shape[1] > 1:
         corr = validos.corr(min_periods=min_sobreposicao)

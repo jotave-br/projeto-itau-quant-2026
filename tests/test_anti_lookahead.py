@@ -247,8 +247,6 @@ def test_fdr_usa_somente_testes_da_propria_janela():
         mt.aplicar_fdr_janela(pd.concat([janela_a, com_futuro_bom],
                                         ignore_index=True))
 
-    # processadas separadamente, a janela A da o mesmo resultado
-    # independentemente do que existe em qualquer outra janela
     r1, _ = mt.aplicar_fdr_janela(janela_a)
     r2, _ = mt.aplicar_fdr_janela(janela_a.copy())
     for outra in (com_futuro_bom, com_futuro_ruim):
@@ -275,7 +273,6 @@ def test_sinal_em_t_so_opera_em_t_mais_1():
     pos, _ = estrategia.construir_posicoes_janela(
         pares, ret_sinal, vol, j, cal)
 
-    # nada e detido no fechamento do proprio dia do sinal
     assert t not in pos.index or pos.loc[t, "SG00"] == 0
     assert pos.loc[cal[26], "SG00"] != 0
 
@@ -309,7 +306,6 @@ def test_walk_forward_deterministico():
     for i in range(n // 2):
         precos[tickers[i]] = 50 * np.exp(np.cumsum(base[:, i]))
     for i in range(n // 2, n):
-        # metade segue a outra metade com um pregao de atraso
         eco = 0.4 * np.roll(base[:, i - n // 2], 1)
         eco[0] = 0.0
         ruido = rng.normal(0, 0.01, len(datas))

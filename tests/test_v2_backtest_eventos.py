@@ -101,6 +101,37 @@ def test_timing_usa_open_close_na_entrada_e_ignora_precos_fora_do_holding():
     assert base.operacoes.iloc[0]["data_saida"] == cal[4]
 
 
+def test_pnl_intraholding_usa_quantidade_fixa_sem_rebalanceamento_diario():
+    cal = _calendario()
+    abertura, fechamento = _paineis(cal)
+    entrada = cal[2]
+    fechamento.loc[entrada, "SEG3"] = 110.0
+    fechamento.loc[cal[3], "SEG3"] = 121.0
+    fechamento.loc[cal[4], "SEG3"] = 133.1
+    cfg = replace(EstrategiaConfig(), peso_maximo_por_posicao=1.0)
+
+    resultado = _rodar(
+        _sinais(cal),
+        _pares(),
+        cal,
+        abertura,
+        fechamento,
+        h=3,
+        cfg_estrategia=cfg,
+        taxa_aluguel_anual=0.0,
+    )
+
+    fluxo = resultado.pnl_operacao_dia
+    assert fluxo["retorno_ativo"].tolist() == pytest.approx([0.10, 0.10, 0.10])
+    assert fluxo["retorno_incremental_entrada"].tolist() == pytest.approx(
+        [0.10, 0.11, 0.121]
+    )
+    peso = 1 / 3
+    assert resultado.operacoes.iloc[0]["pnl_bruto"] == pytest.approx(
+        peso * (133.1 / 100.0 - 1.0)
+    )
+
+
 @pytest.mark.parametrize("h", [1, 3, 5])
 def test_horizontes_saem_no_fechamento_da_h_esima_sessao(h):
     cal = _calendario(10)

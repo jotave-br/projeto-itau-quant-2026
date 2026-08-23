@@ -15,6 +15,17 @@ positivo no horizonte de três pregões. A hipótese nula é retorno líquido m�
 menor ou igual a zero. Um resultado nulo é compatível com a conclusão da V1 e
 não autoriza mudar universo, prompt, horizonte ou regra de seleção.
 
+### Registro de execução — 13/08/2026
+
+O gate de IA reprovou e o backtest foi executado apenas como exploração, sob a
+exceção já documentada. A execução canônica usa exclusivamente as 452 arestas
+top 20, H=3 como principal e H=1/H=5 como robustez. O controle “rede sem IA” usa
+o sinal diário do retorno da líder da V1; o placebo randomiza 500 redes entre
+seguidoras top 20 do mesmo setor, sem self-pairs, e aplica a correção finita do
+valor-p abaixo. A saída por reversão, embora prevista como diagnóstico, não foi
+executada e não integra os resultados ou o relatório. Este registro descreve o
+que foi rodado sem alterar a hipótese principal pré-registrada.
+
 ## Rede preservada da V1
 
 Em cada janela, o universo continua sendo reconstruído apenas com informação

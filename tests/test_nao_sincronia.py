@@ -22,7 +22,6 @@ def _janela():
                                   WalkForwardConfig())[0]
 
 
-# filtro de preco velho
 def _paineis(pregoes=700):
     datas = pd.bdate_range("2015-01-01", periods=pregoes)
     rng = np.random.default_rng(3)
@@ -61,7 +60,6 @@ def test_volume_constante_nao_marca_a_serie_inteira():
     m = nao_sincronia.filtrar_dias_preco_velho(
         volume, negocios, precos, _janela(), NaoSincroniaConfig())
     assert not m["SAUDA3"].any()
-    # no ticker de volume variavel, o decil inferior existe e e minoritario
     frac = m["RARO3"].mean()
     assert 0 < frac < 0.25
 
@@ -90,7 +88,6 @@ def test_subconjunto_sempre_negociado_e_por_janela():
     assert nao_sincronia.subconjunto_sempre_negociado(volume, j) == ["SAUDA3"]
 
 
-# placebos
 def _cenario_placebo(n_duplas=4, pregoes=700, seed=11):
     """
     n_duplas lideres e seguidoras num unico (setor, subsetor). Cada seguidora

@@ -32,11 +32,9 @@ from datetime import datetime
 from importlib import metadata
 from pathlib import Path
 
-# Raiz do projeto: este arquivo esta em <raiz>/src/execucao.py
 RAIZ = Path(__file__).resolve().parent.parent
 DIR_RUNS = RAIZ / "outputs" / "runs"
 
-# Bibliotecas cujas versoes sao registradas no manifesto.
 _DEPENDENCIAS = ("numpy", "pandas", "scipy", "statsmodels", "yfinance", "matplotlib")
 
 

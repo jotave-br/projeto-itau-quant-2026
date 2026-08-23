@@ -105,7 +105,6 @@ def construir_posicoes_janela(
                 continue
             # o mesmo ticker pode ser seguidora de mais de um par no dia
             pesos[seguidora] = pesos.get(seguidora, 0.0) + direcao / v
-            # registro no nivel do sinal, para calcular o CAR depois
             eventos.append({"data": t, "lider": lider, "seguidora": seguidora,
                             "direcao": direcao, "janela": janela.rotulo})
 
@@ -117,7 +116,6 @@ def construir_posicoes_janela(
                                        cfg.peso_maximo_por_posicao)
                   for tk, w in pesos.items()}
 
-        # safra 1/k, do fechamento de t+defasagem ate t+defasagem+k-1
         for passo in range(k):
             idx = pos_t + defasagem + passo
             if idx >= len(cal):

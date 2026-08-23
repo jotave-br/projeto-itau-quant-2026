@@ -89,7 +89,6 @@ def main(execucao: Execucao | None = None) -> int:
         p = pares.gerar_pares(sel, cfg.liquidez.faixas)
         p_principal = p[p["faixa_minima"] <= top_n].reset_index(drop=True)
 
-        # rede no lag principal, todos os pares ate o top100
         rede = leadlag.estimar_rede(ret, p, j, cfg.leadlag)
 
         # BH por faixa, sempre dentro da janela. A tabela principal fica com a
@@ -112,7 +111,6 @@ def main(execucao: Execucao | None = None) -> int:
         sel_topk.append(multiplos_testes.selecionar_pares(
             rede_principal, "top_k", cfg.multiplos_testes))
 
-        # bateria de nao-sincronia na faixa principal
         alternativos.append(leadlag.estimar_lags(ret, p_principal, j,
                                                  cfg.leadlag))
         invertidas.append(leadlag.estimar_direcao_invertida(
