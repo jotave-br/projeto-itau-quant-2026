@@ -11,7 +11,7 @@ financeiro? Quando um evento afeta uma empresa líder, as empresas relacionadas
 a ela, as seguidoras, reagem? Existe um atraso? E, se existe, é possível
 transformá-lo em uma oportunidade de investimento?
 
-O projeto foi finalizado sem uma estratégia para implementar. Encontrei associação
+O projeto terminou sem chegar a uma estratégia que valesse implementar. Encontrei associação
 entre ações no mesmo pregão, mas não um atraso persistente, robusto e capaz de
 produzir retorno depois dos custos. A segunda etapa, condicionada a Fatos
 Relevantes da CVM, também não passou pelos critérios definidos antes do
@@ -28,6 +28,21 @@ impor esse atraso por construção.
 
 O [relatório final](docs/relatorio_final.pdf) reúne o desenho, os gráficos e os
 resultados usados na conclusão.
+
+## Relatório final
+
+As cinco páginas estão reproduzidas abaixo para leitura direta no GitHub.
+Clique em qualquer página para abrir o PDF completo.
+
+[![Página 1 do relatório final: pergunta, identidade e amostra](assets/relatorio/paginas/relatorio_final_pagina-1.png)](docs/relatorio_final.pdf)
+
+[![Página 2 do relatório final: dados, relógio e método](assets/relatorio/paginas/relatorio_final_pagina-2.png)](docs/relatorio_final.pdf)
+
+[![Página 3 do relatório final: resultados da V1](assets/relatorio/paginas/relatorio_final_pagina-3.png)](docs/relatorio_final.pdf)
+
+[![Página 4 do relatório final: eventos e IA na V2](assets/relatorio/paginas/relatorio_final_pagina-4.png)](docs/relatorio_final.pdf)
+
+[![Página 5 do relatório final: backtest e decisão](assets/relatorio/paginas/relatorio_final_pagina-5.png)](docs/relatorio_final.pdf)
 
 ## A pergunta
 
